@@ -3,13 +3,13 @@ CoinHive Stratum Proxy
 
 This proxy allows you to use CoinHive's JavaScript miner on a custom stratum pool. This package was inspired by x25's [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
 
-# Installation
+## Installation
 
 ```
 npm install -g coin-hive-stratum
 ```
 
-# Usage
+## Usage
 
 You just need to launch a proxy pointing to the desired pool:
 
@@ -35,7 +35,7 @@ And then just point your CoinHive miner to the proxy:
 Now your CoinHive miner would be mining on `nanopool.org` XMR pool, using your monero address. This will work for any pool based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up [your own](https://github.com/zone117x/node-stratum-pool).
 
 
-# CLI
+## CLI
 
 ```
 Usage: 'coin-hive-stratum <port>'
@@ -49,7 +49,7 @@ Options:
   --log     Enable/Disable the logs, default is true
 ```
 
-# API
+## API
 
 - `createServer`: Creates a `proxy` server. It may take an `options` object with the following optional properties:
 
@@ -62,7 +62,7 @@ Options:
 - `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
 
 
-# FAQ
+## FAQ
 
 **Can I use this programatically?**
 
