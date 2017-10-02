@@ -64,7 +64,7 @@ Options:
 
 ## FAQ
 
-**Can I use this programamtically?**
+**Can I use this programmatically?**
 
 Yes, like this:
 
