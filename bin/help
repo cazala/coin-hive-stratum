@@ -1,0 +1,9 @@
+Usage: 'coin-hive-stratum <port>'
+
+<port>: The port where the server will listen to
+
+Options:
+
+  --host    The pool's host.
+  --port    The pool's port.
+  --log     Enable/Disable the logs, default is true
