@@ -19,8 +19,13 @@ const port = argv._[0];
 
 const options = {
   port: argv.port || defaults.port,
-  host: argv.host || defaults.host,
-  log: argv.log || defaults.log
+  host: argv.host || defaults.host
+}
+
+if (argv.log === 'false') {
+  options.log = false;
+} else {
+  options.log = defaults.log;
 }
 
 const proxy = createProxy(options);

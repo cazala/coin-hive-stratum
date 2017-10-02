@@ -23,7 +23,7 @@ And then just point your CoinHive miner to the proxy:
 <script src="https://coinhive.com/lib/coinhive.min.js"></script>
 <script>
   // Configure CoinHive to point to your proxy
-  CoinHive.CONFIG.WEBSOCKET_SHARDS = [["ws://localhost:8094"]];
+  CoinHive.CONFIG.WEBSOCKET_SHARDS = [["ws://localhost:8892"]];
 
   // Start miner
   var miner = CoinHive.Anonymous('your-monero-address');
@@ -34,11 +34,8 @@ And then just point your CoinHive miner to the proxy:
 
 Now your CoinHive miner would be mining on `nanopool.org` XMR pool, using your monero address. This will work for any pool based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up [your own](https://github.com/zone117x/node-stratum-pool).
 
-You can also use this package programatically:
 
 # CLI
-
-You can use `coin-hive-stratum` from the command line:
 
 ```
 Usage: 'coin-hive-stratum <port>'
@@ -88,7 +85,7 @@ Yes, just create a `CoinHive.User` and the username will be used as the stratum 
 <script src="https://coinhive.com/lib/coinhive.min.js"></script>
 <script>
   // Configure CoinHive to point to your proxy
-  CoinHive.CONFIG.WEBSOCKET_SHARDS = [["ws://localhost:8094"]];
+  CoinHive.CONFIG.WEBSOCKET_SHARDS = [["ws://localhost:8892"]];
 
   // Start miner
   var miner = CoinHive.User('your-monero-address', 'my-worker');
