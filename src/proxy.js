@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const Queue = require('./queue');
 const net = require('net');
 const defaults = require('../config/defaults');
 function createProxy(options = defaults) {
@@ -9,21 +10,99 @@ function createProxy(options = defaults) {
       let wss = new WebSocket.Server({ port: +port });
       log('websocket server created');
       log('listening on port', port);
-      let socket = new net.Socket();
-      log('tcp socket created');
-      socket.connect(+constructorOptions.port, constructorOptions.host, function () {
-        log('connected to pool');
-        log('host', constructorOptions.host);
-        log('port', constructorOptions.port);
-        wss.on('connection', (ws) => {
-          let online = true;
-          let workerId = null;
-          let rpcId = 1;
-          let hashes = 1;
-          let getRpcId = () => rpcId++;
-          let getHashes = () => (hashes++);
-          let sendToPool = (payload) => {
-            const stratumMessage = JSON.stringify(payload);
+      wss.on('connection', (ws) => {
+        let getRpcId = null;
+        let getHashes = null;
+        let sendToPool = null;
+        let online = null;
+        let workerId = null;
+        let rpcId = null;
+        let hashes = null;
+        let socket = null;
+        log('new websocket connection');
+        let queue = new Queue();
+        log('queue created');
+        ws.on('message', function (message) {
+          queue.push({
+            type: 'message',
+            payload: message
+          });
+        });
+        ws.on('close', () => {
+          queue.push({
+            type: 'close',
+            payload: null
+          });
+        });
+        ws.on('error', (error) => {
+          queue.push({
+            type: 'error',
+            payload: error
+          });
+        });
+        queue.on('close', () => {
+          online = false;
+          if (socket) {
+            queue.stop();
+            socket.destroy();
+          }
+          log('miner connection closed');
+        });
+        queue.on('error', (error) => {
+          if (socket) {
+            queue.stop();
+            socket.destroy();
+          }
+          log('miner connection error', error.message);
+        });
+        queue.on('message', function (message) {
+          log('\nmessage from miner to pool:\n\n', message);
+          const data = JSON.parse(message);
+          switch (data.type) {
+            case 'auth': {
+              let login = data.params.site_key;
+              if (data.params.user) {
+                login += '.' + data.params.user;
+              }
+              sendToPool({
+                id: getRpcId(),
+                method: 'login',
+                params: {
+                  login: login,
+                  pass: 'x'
+                },
+              });
+              break;
+            }
+            case 'submit': {
+              sendToPool({
+                id: getRpcId(),
+                method: 'submit',
+                params: {
+                  id: workerId,
+                  job_id: data.params.job_id,
+                  nonce: data.params.nonce,
+                  result: data.params.result
+                }
+              });
+              break;
+            }
+          }
+        })
+        socket = new net.Socket();
+        log('tcp socket created');
+        socket.connect(+constructorOptions.port, constructorOptions.host, function () {
+          log('connected to pool');
+          log('host', constructorOptions.host);
+          log('port', constructorOptions.port);
+          online = true;
+          workerId = null;
+          rpcId = 1;
+          hashes = 1;
+          getRpcId = () => rpcId++;
+          getHashes = () => (hashes++);
+          sendToPool = (payload) => {
+            const stratumMessage = JSON.stringify(payload) + '\n';
             socket.write(stratumMessage);
             log('\nmessage sent to pool:\n\n', stratumMessage);
           }
@@ -36,36 +115,6 @@ function createProxy(options = defaults) {
               log('\nfailed to send message to miner cos it was offline:', coinHiveMessage)
             }
           }
-          log('new websocket connection');
-          ws.on('message', function (message) {
-            log('\nmessage from miner to pool:\n\n', message);
-            const data = JSON.parse(message);
-            switch (data.type) {
-              case 'auth': {
-                let login = data.params.site_key;
-                if (data.params.user) {
-                  login += '.' + data.params.user;
-                }
-                sendToPool({
-                  id: getRpcId(),
-                  method: 'login',
-                  params: {
-                    login: login,
-                    pass: 'x'
-                  },
-                });
-                break;
-              }
-              case 'submit': {
-                sendToPool({
-                  id: getRpcId(),
-                  method: 'submit',
-                  params: data.params
-                });
-                break;
-              }
-            }
-          });
           socket.on('data', function (buffer) {
             const stratumMessage = buffer.toString('utf8');
             log('\nmessage from pool to miner:\n\n', stratumMessage);
@@ -102,19 +151,18 @@ function createProxy(options = defaults) {
               }
             }
           });
-          ws.on('close', () => {
-            online = false;
-          });
-          ws.on('error', (error) => {
-            log('miner connection error', error);
-          });
           socket.on('close', function () {
             log('connection to pool closed');
             ws.close();
+            queue.stop();
           });
           socket.on('error', function (error) {
-            log('pool connection error', error);
+            log('pool connection error', error && error.message ? error.message : error);
+            ws.close();
+            queue.stop();
           });
+          queue.start();
+          log('queue started');
         });
       })
     }
