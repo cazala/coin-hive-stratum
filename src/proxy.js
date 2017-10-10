@@ -198,7 +198,11 @@ function createProxy(options = defaults) {
   log = function () { options.log && console.log.apply(null, arguments) };
   return {
     listen: function listen(port = 8892) {
-      let wss = new WebSocket.Server({ port: +port });
+      if (options.path) {
+        let wss = new WebSocket.Server({ path: options.path, port: +port });
+      } else {
+        let wss = new WebSocket.Server({ port: +port });
+      }
       log('websocket server created');
       log('listening on port', port);
       wss.on('connection', (ws) => {
