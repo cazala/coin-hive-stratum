@@ -1,10 +1,10 @@
-const WebSocket = require('ws');
-const Queue = require('./queue');
-const net = require('net');
-const defaults = require('../config/defaults');
+const WebSocket = require("ws");
+const Queue = require("./queue");
+const net = require("net");
+const defaults = require("../config/defaults");
 
 function getConnection(ws) {
-  log('new websocket connection');
+  log("new websocket connection");
   return {
     online: null,
     workerId: null,
@@ -13,35 +13,35 @@ function getConnection(ws) {
     socket: null,
     queue: null,
     ws: ws
-  }
+  };
 }
 
 function createQueue(connection) {
-  log('queue created');
+  log("queue created");
   connection.queue = new Queue();
 }
 
 function bindWebSocket(connection) {
-  connection.ws.on('message', function (message) {
+  connection.ws.on("message", function(message) {
     if (connection.queue) {
       connection.queue.push({
-        type: 'message',
+        type: "message",
         payload: message
       });
     }
   });
-  connection.ws.on('close', () => {
+  connection.ws.on("close", () => {
     if (connection.queue) {
       connection.queue.push({
-        type: 'close',
+        type: "close",
         payload: null
       });
     }
   });
-  connection.ws.on('error', (error) => {
+  connection.ws.on("error", error => {
     if (connection.queue) {
       connection.queue.push({
-        type: 'error',
+        type: "error",
         payload: error
       });
     }
@@ -49,37 +49,37 @@ function bindWebSocket(connection) {
 }
 
 function bindQueue(connection) {
-  connection.queue.on('close', () => {
+  connection.queue.on("close", () => {
     killConnection(connection);
-    log('miner connection closed');
+    log("miner connection closed");
   });
-  connection.queue.on('error', (error) => {
+  connection.queue.on("error", error => {
     killConnection(connection);
-    log('miner connection error', error.message);
+    log("miner connection error", error.message);
   });
-  connection.queue.on('message', function (message) {
-    log('\nmessage from miner to pool:\n\n', message);
+  connection.queue.on("message", function(message) {
+    log("\nmessage from miner to pool:\n\n", message);
     const data = JSON.parse(message);
     switch (data.type) {
-      case 'auth': {
+      case "auth": {
         let login = data.params.site_key;
         if (data.params.user) {
-          login += '.' + data.params.user;
+          login += "." + data.params.user;
         }
         sendToPool(connection, {
           id: getRpcId(connection),
-          method: 'login',
+          method: "login",
           params: {
             login: login,
-            pass: 'x'
-          },
+            pass: "x"
+          }
         });
         break;
       }
-      case 'submit': {
+      case "submit": {
         sendToPool(connection, {
           id: getRpcId(connection),
-          method: 'submit',
+          method: "submit",
           params: {
             id: connection.workerId,
             job_id: data.params.job_id,
@@ -90,22 +90,25 @@ function bindQueue(connection) {
         break;
       }
     }
-  })
+  });
 }
 
 function sendToPool(connection, payload) {
-  const stratumMessage = JSON.stringify(payload) + '\n';
+  const stratumMessage = JSON.stringify(payload) + "\n";
   connection.socket.write(stratumMessage);
-  log('\nmessage sent to pool:\n\n', stratumMessage);
+  log("\nmessage sent to pool:\n\n", stratumMessage);
 }
 
 function sendToMiner(connection, payload) {
   const coinHiveMessage = JSON.stringify(payload);
   if (connection.online) {
     connection.ws.send(coinHiveMessage);
-    log('\nmessage sent to miner:\n\n', coinHiveMessage);
+    log("\nmessage sent to miner:\n\n", coinHiveMessage);
   } else {
-    log('\nfailed to send message to miner cos it was offline:', coinHiveMessage)
+    log(
+      "\nfailed to send message to miner cos it was offline:",
+      coinHiveMessage
+    );
   }
 }
 
@@ -119,43 +122,43 @@ function getHashes(connection) {
 
 function connectSocket(connection, port, host) {
   connection.socket = new net.Socket();
-  log('tcp socket created');
-  connection.socket.connect(+port, host, function () {
-    log('connected to pool');
-    log('host', host);
-    log('port', port);
+  log("tcp socket created");
+  connection.socket.connect(+port, host, function() {
+    log("connected to pool");
+    log("host", host);
+    log("port", port);
     connection.online = true;
     connection.rpcId = 1;
     connection.hashes = 1;
-    connection.socket.on('data', function (buffer) {
-      const stratumMessage = buffer.toString('utf8');
-      log('\nmessage from pool to miner:\n\n', stratumMessage);
+    connection.socket.on("data", function(buffer) {
+      const stratumMessage = buffer.toString("utf8");
+      log("\nmessage from pool to miner:\n\n", stratumMessage);
       const data = JSON.parse(stratumMessage);
       if (data.id === 1) {
         connection.workerId = data.result.id;
         sendToMiner(connection, {
-          type: 'authed',
+          type: "authed",
           params: {
-            token: '',
+            token: "",
             hashes: 0
           }
         });
         if (data.result.job) {
           sendToMiner(connection, {
-            type: 'job',
+            type: "job",
             params: data.result.job
           });
         }
       } else {
-        if (data.method === 'job') {
+        if (data.method === "job") {
           sendToMiner(connection, {
-            type: 'job',
+            type: "job",
             params: data.params
           });
         }
-        if (data.result && data.result.status === 'OK') {
+        if (data.result && data.result.status === "OK") {
           sendToMiner(connection, {
-            type: 'hash_accepted',
+            type: "hash_accepted",
             params: {
               hashes: getHashes(connection)
             }
@@ -163,16 +166,19 @@ function connectSocket(connection, port, host) {
         }
       }
     });
-    connection.socket.on('close', function () {
-      log('connection to pool closed');
+    connection.socket.on("close", function() {
+      log("connection to pool closed");
       killConnection(connection);
     });
-    connection.socket.on('error', function (error) {
-      log('pool connection error', error && error.message ? error.message : error);
+    connection.socket.on("error", function(error) {
+      log(
+        "pool connection error",
+        error && error.message ? error.message : error
+      );
       killConnection(connection);
     });
     connection.queue.start();
-    log('queue started');
+    log("queue started");
   });
 }
 
@@ -195,25 +201,32 @@ function killConnection(connection) {
 
 function createProxy(options = defaults) {
   const constructorOptions = Object.assign({}, defaults, options);
-  log = function () { options.log && console.log.apply(null, arguments) };
+  log = function() {
+    options.log && console.log.apply(null, arguments);
+  };
   return {
     listen: function listen(port = 8892) {
+      let wss;
       if (options.path) {
-        let wss = new WebSocket.Server({ path: options.path, port: +port });
+        wss = new WebSocket.Server({ path: options.path, port: +port });
       } else {
-        let wss = new WebSocket.Server({ port: +port });
+        wss = new WebSocket.Server({ port: +port });
       }
-      log('websocket server created');
-      log('listening on port', port);
-      wss.on('connection', (ws) => {
+      log("websocket server created");
+      log("listening on port", port);
+      wss.on("connection", ws => {
         const connection = getConnection(ws);
         createQueue(connection);
         bindWebSocket(connection);
         bindQueue(connection);
-        connectSocket(connection, +constructorOptions.port, constructorOptions.host);
+        connectSocket(
+          connection,
+          +constructorOptions.port,
+          constructorOptions.host
+        );
       });
     }
-  }
+  };
 }
 
 module.exports = createProxy;
