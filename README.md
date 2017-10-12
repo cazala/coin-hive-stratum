@@ -51,7 +51,7 @@ Options:
 
 ## API
 
-- `createServer`: Creates a `proxy` server. It may take an `options` object with the following optional properties:
+- `createProxy`: Creates a `proxy` server. It may take an `options` object with the following optional properties:
 
   - `host`: the pool's host.
 
