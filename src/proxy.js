@@ -145,6 +145,12 @@ function connectSocket(connection, port, host) {
       log("\nmessage from pool to miner:\n\n", stratumMessage);
       const data = JSON.parse(stratumMessage);
       if (data.id === 1) {
+        if (data.error && data.error.code === -1) {
+          return sendToMiner(connection, {
+            type: "error",
+            error: "invalid_site_key"
+          });
+        }
         connection.workerId = data.result.id;
         sendToMiner(connection, {
           type: "authed",
