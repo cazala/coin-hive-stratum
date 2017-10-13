@@ -59,7 +59,12 @@ function bindQueue(connection) {
   });
   connection.queue.on("message", function(message) {
     log("\nmessage from miner to pool:\n\n", message);
-    const data = JSON.parse(message);
+    let data = null;
+    try {
+      data = JSON.parse(message);
+    } catch (e) {
+      return log("\ncan't parse message as JSON from miner:\n\n", message);
+    }
     switch (data.type) {
       case "auth": {
         let login = data.params.site_key;
