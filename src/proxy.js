@@ -143,12 +143,24 @@ function connectSocket(connection, port, host) {
     connection.socket.on("data", function(buffer) {
       const stratumMessage = buffer.toString("utf8");
       log("\nmessage from pool to miner:\n\n", stratumMessage);
-      const data = JSON.parse(stratumMessage);
+      let data = null;
+      try {
+        data = JSON.parse(stratumMessage);
+      } catch (e) {
+        return sendToMiner(connection, {
+          type: "error",
+          params: {
+            error: "parse_pool_response"
+          }
+        });
+      }
       if (data.id === 1) {
         if (data.error && data.error.code === -1) {
           return sendToMiner(connection, {
             type: "error",
-            error: "invalid_site_key"
+            params: {
+              error: "invalid_site_key"
+            }
           });
         }
         connection.workerId = data.result.id;
