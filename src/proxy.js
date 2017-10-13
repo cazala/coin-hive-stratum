@@ -111,8 +111,8 @@ function sendToMiner(connection, payload) {
       connection.ws.send(coinHiveMessage);
       log("\nmessage sent to miner:\n\n", coinHiveMessage);
     } catch (e) {
-      log("\nsocket seems to be already closed.")
-      killConnection(connection)
+      log("\nsocket seems to be already closed.");
+      killConnection(connection);
     }
   } else {
     log(
@@ -215,15 +215,16 @@ function createProxy(options = defaults) {
     options.log && console.log.apply(null, arguments);
   };
   return {
-    listen: function listen(port = 8892) {
-      let wss;
-      if (options.path) {
-        wss = new WebSocket.Server({ path: options.path, port: +port });
-      } else {
-        wss = new WebSocket.Server({ port: +port });
+    listen: function listen(wssOptions) {
+      if (wssOptions !== Object(wssOptions)) {
+        wssOptions = { port: +wssOptions };
       }
+      if (options.path) {
+        wssOptions.path = options.path;
+      }
+      const wss = new WebSocket.Server(wssOptions);
       log("websocket server created");
-      log("listening on port", port);
+      log("listening on port", wssOptions.port);
       wss.on("connection", ws => {
         const connection = getConnection(ws);
         createQueue(connection);
