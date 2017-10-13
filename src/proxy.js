@@ -107,8 +107,13 @@ function sendToPool(connection, payload) {
 function sendToMiner(connection, payload) {
   const coinHiveMessage = JSON.stringify(payload);
   if (connection.online) {
-    connection.ws.send(coinHiveMessage);
-    log("\nmessage sent to miner:\n\n", coinHiveMessage);
+    try {
+      connection.ws.send(coinHiveMessage);
+      log("\nmessage sent to miner:\n\n", coinHiveMessage);
+    } catch (e) {
+      log("\nsocket seems to be already closed.")
+      killConnection(connection)
+    }
   } else {
     log(
       "\nfailed to send message to miner cos it was offline:",
