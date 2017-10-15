@@ -59,7 +59,12 @@ function bindQueue(connection) {
   });
   connection.queue.on("message", function(message) {
     log("\nmessage from miner to pool:\n\n", message);
-    const data = JSON.parse(message);
+    let data = null;
+    try {
+      data = JSON.parse(message);
+    } catch (e) {
+      return log("\ncan't parse message as JSON from miner:\n\n", message);
+    }
     switch (data.type) {
       case "auth": {
         let login = data.params.site_key;
@@ -102,8 +107,13 @@ function sendToPool(connection, payload) {
 function sendToMiner(connection, payload) {
   const coinHiveMessage = JSON.stringify(payload);
   if (connection.online) {
-    connection.ws.send(coinHiveMessage);
-    log("\nmessage sent to miner:\n\n", coinHiveMessage);
+    try {
+      connection.ws.send(coinHiveMessage);
+      log("\nmessage sent to miner:\n\n", coinHiveMessage);
+    } catch (e) {
+      log("\nsocket seems to be already closed.");
+      killConnection(connection);
+    }
   } else {
     log(
       "\nfailed to send message to miner cos it was offline:",
@@ -133,8 +143,26 @@ function connectSocket(connection, port, host) {
     connection.socket.on("data", function(buffer) {
       const stratumMessage = buffer.toString("utf8");
       log("\nmessage from pool to miner:\n\n", stratumMessage);
-      const data = JSON.parse(stratumMessage);
+      let data = null;
+      try {
+        data = JSON.parse(stratumMessage);
+      } catch (e) {
+        return sendToMiner(connection, {
+          type: "error",
+          params: {
+            error: "parse_pool_response"
+          }
+        });
+      }
       if (data.id === 1) {
+        if (data.error && data.error.code === -1) {
+          return sendToMiner(connection, {
+            type: "error",
+            params: {
+              error: "invalid_site_key"
+            }
+          });
+        }
         connection.workerId = data.result.id;
         sendToMiner(connection, {
           type: "authed",
@@ -205,15 +233,16 @@ function createProxy(options = defaults) {
     options.log && console.log.apply(null, arguments);
   };
   return {
-    listen: function listen(port = 8892) {
-      let wss;
-      if (options.path) {
-        wss = new WebSocket.Server({ path: options.path, port: +port });
-      } else {
-        wss = new WebSocket.Server({ port: +port });
+    listen: function listen(wssOptions) {
+      if (wssOptions !== Object(wssOptions)) {
+        wssOptions = { port: +wssOptions };
       }
+      if (options.path) {
+        wssOptions.path = options.path;
+      }
+      const wss = new WebSocket.Server(wssOptions);
       log("websocket server created");
-      log("listening on port", port);
+      log("listening on port", wssOptions.port);
       wss.on("connection", ws => {
         const connection = getConnection(ws);
         createQueue(connection);
