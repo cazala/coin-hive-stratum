@@ -1,6 +1,8 @@
 const WebSocket = require("ws");
 const Queue = require("./queue");
+const moment = require("moment");
 const net = require("net");
+const fs = require("fs");
 const defaults = require("../config/defaults");
 
 function getConnection(ws) {
@@ -58,12 +60,12 @@ function bindQueue(connection) {
     log("miner connection error", error.message);
   });
   connection.queue.on("message", function(message) {
-    log("\nmessage from miner to pool:\n\n", message);
+    log("message from miner to pool:", message);
     let data = null;
     try {
       data = JSON.parse(message);
     } catch (e) {
-      return log("\ncan't parse message as JSON from miner:\n\n", message);
+      return log("can't parse message as JSON from miner:", message);
     }
     switch (data.type) {
       case "auth": {
@@ -99,9 +101,9 @@ function bindQueue(connection) {
 }
 
 function sendToPool(connection, payload) {
-  const stratumMessage = JSON.stringify(payload) + "\n";
+  const stratumMessage = JSON.stringify(payload) + "";
   connection.socket.write(stratumMessage);
-  log("\nmessage sent to pool:\n\n", stratumMessage);
+  log("message sent to pool:", stratumMessage);
 }
 
 function sendToMiner(connection, payload) {
@@ -109,16 +111,13 @@ function sendToMiner(connection, payload) {
   if (connection.online) {
     try {
       connection.ws.send(coinHiveMessage);
-      log("\nmessage sent to miner:\n\n", coinHiveMessage);
+      log("message sent to miner:", coinHiveMessage);
     } catch (e) {
-      log("\nsocket seems to be already closed.");
+      log("socket seems to be already closed.");
       killConnection(connection);
     }
   } else {
-    log(
-      "\nfailed to send message to miner cos it was offline:",
-      coinHiveMessage
-    );
+    log("failed to send message to miner cos it was offline:", coinHiveMessage);
   }
 }
 
@@ -142,7 +141,7 @@ function connectSocket(connection, port, host) {
     connection.hashes = 1;
     connection.socket.on("data", function(buffer) {
       const stratumMessage = buffer.toString("utf8");
-      log("\nmessage from pool to miner:\n\n", stratumMessage);
+      log("message from pool to miner:", stratumMessage);
       let data = null;
       try {
         data = JSON.parse(stratumMessage);
@@ -230,7 +229,26 @@ function killConnection(connection) {
 function createProxy(options = defaults) {
   const constructorOptions = Object.assign({}, defaults, options);
   log = function() {
-    options.log && console.log.apply(null, arguments);
+    const logString =
+      "[" +
+      moment().format("MMM Do hh:mm") +
+      "] " +
+      Array.prototype.slice.call(arguments).join(" ") +
+      "\n";
+    if (options.log) {
+      console.log(logString);
+    }
+    if (typeof options.logFile === "string") {
+      try {
+        fs.appendFile(options.logFile || "proxy.log", logString, err => {
+          if (err) {
+            // error saving logs
+          }
+        });
+      } catch (e) {
+        // exception while saving logs
+      }
+    }
   };
   return {
     listen: function listen(wssOptions) {

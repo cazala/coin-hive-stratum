@@ -4,6 +4,7 @@ Usage: 'coin-hive-stratum <port>'
 
 Options:
 
-  --host    The pool's host.
-  --port    The pool's port.
-  --log     Enable/Disable the logs, default is true
+  --host      The pool's host.
+  --port      The pool's port.
+  --log       Enable/Disable the logs, default is true
+  --log-file  A filename where the logs will be stored, ie: proxy.log
