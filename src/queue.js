@@ -1,11 +1,11 @@
-const EventEmitter = require('events');
+const EventEmitter = require("events");
 module.exports = class Queue extends EventEmitter {
-
-  constructor(ms = 1000) {
+  constructor(ms = 100) {
     super();
     this.events = [];
     this.interval = null;
     this.ms = ms;
+    this.baypassed = false;
   }
 
   start() {
@@ -15,6 +15,8 @@ module.exports = class Queue extends EventEmitter {
         const event = that.events.pop();
         if (event) {
           that.emit(event.type, event.payload);
+        } else {
+          this.bypass();
         }
       }, this.ms);
     }
@@ -27,7 +29,16 @@ module.exports = class Queue extends EventEmitter {
     }
   }
 
-  push(event) {
-    this.events.push(event);
+  bypass() {
+    this.bypassed = true;
+    this.stop();
   }
-}
+
+  push(event) {
+    if (this.bypassed) {
+      this.emit(event.type, event.payload);
+    } else {
+      this.events.push(event);
+    }
+  }
+};
