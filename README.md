@@ -59,7 +59,7 @@ Options:
 
   - `port`: the pool's port.
 
-  - `port`: the pool's password, default is `"x"`.
+  - `pass`: the pool's password, default is `"x"`.
 
   - `log`: enable/disable the logs, default is `true`.
 
