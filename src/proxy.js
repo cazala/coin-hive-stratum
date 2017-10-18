@@ -103,7 +103,7 @@ function bindQueue(connection) {
 }
 
 function sendToPool(connection, payload) {
-  const stratumMessage = JSON.stringify(payload) + "";
+  const stratumMessage = JSON.stringify(payload) + "\n";
   connection.socket.write(stratumMessage);
   log("message sent to pool:", stratumMessage);
 }
