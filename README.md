@@ -64,7 +64,7 @@ Options:
 
 ## FAQ
 
-**Can I use this programmatically?**
+#### Can I use this programmatically?
 
 Yes, like this:
 
@@ -77,7 +77,7 @@ const proxy = createProxy({
 proxy.listen(8892);
 ```
 
-**Can I use several workers?**
+#### Can I use several workers?
 
 Yes, just create a `CoinHive.User` and the username will be used as the stratum worker name:
 
@@ -92,6 +92,14 @@ Yes, just create a `CoinHive.User` and the username will be used as the stratum 
   miner.start();
 
 </script>
+```
+
+#### Can I run this on Docker?
+
+Yes, just like this:
+
+```
+$ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=xmr-eu1.nanopool.org --port=14444
 ```
 
 ## Disclaimer
