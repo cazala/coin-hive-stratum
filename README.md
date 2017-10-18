@@ -44,9 +44,10 @@ Usage: 'coin-hive-stratum <port>'
 
 Options:
 
-  --host    The pool's host.
-  --port    The pool's port.
-  --log     Enable/Disable the logs, default is true
+  --host      The pool's host.
+  --port      The pool's port.
+  --log       Enable/Disable the logs, default is true
+  --log-file  A filename where the logs will be stored, ie: proxy.log
 ```
 
 ## API
@@ -58,6 +59,8 @@ Options:
   - `port`: the pool's port.
 
   - `log`: enable/disable the logs, default is `true`.
+
+  - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`
 
 - `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
 
