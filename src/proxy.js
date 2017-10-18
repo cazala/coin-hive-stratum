@@ -14,6 +14,7 @@ function getConnection(ws, options) {
     hashes: null,
     socket: null,
     queue: null,
+    buffer: "",
     ws: ws,
     options: options
   };
@@ -133,6 +134,7 @@ function getHashes(connection) {
 function connectSocket(connection) {
   connection.socket = new net.Socket();
   log("tcp socket created");
+  connection.socket.setEncoding("utf8");
   connection.socket.connect(
     +connection.options.port,
     connection.options.host,
@@ -144,57 +146,59 @@ function connectSocket(connection) {
       connection.online = true;
       connection.rpcId = 1;
       connection.hashes = 1;
-      connection.socket.on("data", function(buffer) {
-        const stratumMessage = buffer.toString("utf8");
-        log("message from pool to miner:", stratumMessage);
-        let data = null;
-        try {
-          data = JSON.parse(stratumMessage);
-        } catch (e) {
-          return sendToMiner(connection, {
-            type: "error",
-            params: {
-              error: "parse_pool_response"
-            }
-          });
-        }
-        if (data.id === 1) {
-          if (data.error && data.error.code === -1) {
-            return sendToMiner(connection, {
-              type: "error",
-              params: {
-                error: "invalid_site_key"
+      connection.socket.on("data", function(chunk) {
+        connection.buffer += chunk;
+        while (connection.buffer.includes("\n")) {
+          const newLineIndex = connection.buffer.indexOf("\n");
+          const stratumMessage = connection.buffer.slice(0, newLineIndex);
+          connection.buffer = connection.buffer.slice(newLineIndex + 1);
+          log("message from pool to miner:", stratumMessage);
+          let data = null;
+          try {
+            data = JSON.parse(stratumMessage);
+          } catch (e) {
+            // invalid pool message
+          }
+          if (data != null) {
+            if (data.id === 1) {
+              if (data.error && data.error.code === -1) {
+                return sendToMiner(connection, {
+                  type: "error",
+                  params: {
+                    error: "invalid_site_key"
+                  }
+                });
               }
-            });
-          }
-          connection.workerId = data.result.id;
-          sendToMiner(connection, {
-            type: "authed",
-            params: {
-              token: "",
-              hashes: 0
-            }
-          });
-          if (data.result.job) {
-            sendToMiner(connection, {
-              type: "job",
-              params: data.result.job
-            });
-          }
-        } else {
-          if (data.method === "job") {
-            sendToMiner(connection, {
-              type: "job",
-              params: data.params
-            });
-          }
-          if (data.result && data.result.status === "OK") {
-            sendToMiner(connection, {
-              type: "hash_accepted",
-              params: {
-                hashes: getHashes(connection)
+              connection.workerId = data.result.id;
+              sendToMiner(connection, {
+                type: "authed",
+                params: {
+                  token: "",
+                  hashes: 0
+                }
+              });
+              if (data.result.job) {
+                sendToMiner(connection, {
+                  type: "job",
+                  params: data.result.job
+                });
               }
-            });
+            } else {
+              if (data.method === "job") {
+                sendToMiner(connection, {
+                  type: "job",
+                  params: data.params
+                });
+              }
+              if (data.result && data.result.status === "OK") {
+                sendToMiner(connection, {
+                  type: "hash_accepted",
+                  params: {
+                    hashes: getHashes(connection)
+                  }
+                });
+              }
+            }
           }
         }
       });
@@ -227,6 +231,7 @@ function killConnection(connection) {
   }
   connection.online = false;
   connection.socket = null;
+  connection.buffer = null;
   connection.queue = null;
   connection.ws = null;
   connection.options = null;
