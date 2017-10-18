@@ -5,7 +5,7 @@ const net = require("net");
 const fs = require("fs");
 const defaults = require("../config/defaults");
 
-function getConnection(ws) {
+function getConnection(ws, options) {
   log("new websocket connection");
   return {
     online: null,
@@ -14,7 +14,8 @@ function getConnection(ws) {
     hashes: null,
     socket: null,
     queue: null,
-    ws: ws
+    ws: ws,
+    options: options
   };
 }
 
@@ -78,7 +79,7 @@ function bindQueue(connection) {
           method: "login",
           params: {
             login: login,
-            pass: "x"
+            pass: connection.options.pass || "x"
           }
         });
         break;
@@ -129,84 +130,89 @@ function getHashes(connection) {
   return connection.hashes++;
 }
 
-function connectSocket(connection, port, host) {
+function connectSocket(connection) {
   connection.socket = new net.Socket();
   log("tcp socket created");
-  connection.socket.connect(+port, host, function() {
-    log("connected to pool");
-    log("host", host);
-    log("port", port);
-    connection.online = true;
-    connection.rpcId = 1;
-    connection.hashes = 1;
-    connection.socket.on("data", function(buffer) {
-      const stratumMessage = buffer.toString("utf8");
-      log("message from pool to miner:", stratumMessage);
-      let data = null;
-      try {
-        data = JSON.parse(stratumMessage);
-      } catch (e) {
-        return sendToMiner(connection, {
-          type: "error",
-          params: {
-            error: "parse_pool_response"
-          }
-        });
-      }
-      if (data.id === 1) {
-        if (data.error && data.error.code === -1) {
+  connection.socket.connect(
+    +connection.options.port,
+    connection.options.host,
+    function() {
+      log("connected to pool");
+      log("host", connection.options.host);
+      log("port", connection.options.port);
+      log("pass", connection.options.pass);
+      connection.online = true;
+      connection.rpcId = 1;
+      connection.hashes = 1;
+      connection.socket.on("data", function(buffer) {
+        const stratumMessage = buffer.toString("utf8");
+        log("message from pool to miner:", stratumMessage);
+        let data = null;
+        try {
+          data = JSON.parse(stratumMessage);
+        } catch (e) {
           return sendToMiner(connection, {
             type: "error",
             params: {
-              error: "invalid_site_key"
+              error: "parse_pool_response"
             }
           });
         }
-        connection.workerId = data.result.id;
-        sendToMiner(connection, {
-          type: "authed",
-          params: {
-            token: "",
-            hashes: 0
+        if (data.id === 1) {
+          if (data.error && data.error.code === -1) {
+            return sendToMiner(connection, {
+              type: "error",
+              params: {
+                error: "invalid_site_key"
+              }
+            });
           }
-        });
-        if (data.result.job) {
+          connection.workerId = data.result.id;
           sendToMiner(connection, {
-            type: "job",
-            params: data.result.job
-          });
-        }
-      } else {
-        if (data.method === "job") {
-          sendToMiner(connection, {
-            type: "job",
-            params: data.params
-          });
-        }
-        if (data.result && data.result.status === "OK") {
-          sendToMiner(connection, {
-            type: "hash_accepted",
+            type: "authed",
             params: {
-              hashes: getHashes(connection)
+              token: "",
+              hashes: 0
             }
           });
+          if (data.result.job) {
+            sendToMiner(connection, {
+              type: "job",
+              params: data.result.job
+            });
+          }
+        } else {
+          if (data.method === "job") {
+            sendToMiner(connection, {
+              type: "job",
+              params: data.params
+            });
+          }
+          if (data.result && data.result.status === "OK") {
+            sendToMiner(connection, {
+              type: "hash_accepted",
+              params: {
+                hashes: getHashes(connection)
+              }
+            });
+          }
         }
-      }
-    });
-    connection.socket.on("close", function() {
-      log("connection to pool closed");
-      killConnection(connection);
-    });
-    connection.socket.on("error", function(error) {
-      log(
-        "pool connection error",
-        error && error.message ? error.message : error
-      );
-      killConnection(connection);
-    });
-    connection.queue.start();
-    log("queue started");
-  });
+      });
+      connection.socket.on("close", function() {
+        log("connection to pool closed");
+        killConnection(connection);
+      });
+      connection.socket.on("error", function(error) {
+        log(
+          "pool connection error",
+          error && error.message ? error.message : error
+        );
+        killConnection(connection);
+      });
+      connection.queue.start();
+      log("queue started");
+    }
+  );
 }
 
 function killConnection(connection) {
@@ -223,6 +229,7 @@ function killConnection(connection) {
   connection.socket = null;
   connection.queue = null;
   connection.ws = null;
+  connection.options = null;
   connection = null;
 }
 
@@ -262,15 +269,11 @@ function createProxy(options = defaults) {
       log("websocket server created");
       log("listening on port", wssOptions.port);
       wss.on("connection", ws => {
-        const connection = getConnection(ws);
+        const connection = getConnection(ws, constructorOptions);
         createQueue(connection);
         bindWebSocket(connection);
         bindQueue(connection);
-        connectSocket(
-          connection,
-          +constructorOptions.port,
-          constructorOptions.host
-        );
+        connectSocket(connection);
       });
     }
   };

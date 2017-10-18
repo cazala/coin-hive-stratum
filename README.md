@@ -46,6 +46,7 @@ Options:
 
   --host      The pool's host.
   --port      The pool's port.
+  --pass      The pool's password, by default it's "x"
   --log       Enable/Disable the logs, default is true
   --log-file  A filename where the logs will be stored, ie: proxy.log
 ```
@@ -58,9 +59,11 @@ Options:
 
   - `port`: the pool's port.
 
+  - `port`: the pool's password, default is `"x"`.
+
   - `log`: enable/disable the logs, default is `true`.
 
-  - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`
+  - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`.
 
 - `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
 

@@ -6,5 +6,6 @@ Options:
 
   --host      The pool's host.
   --port      The pool's port.
+  --pass      The pool's password, by default it's "x"
   --log       Enable/Disable the logs, default is true
   --log-file  A filename where the logs will be stored, ie: proxy.log

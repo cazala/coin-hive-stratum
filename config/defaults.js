@@ -1,6 +1,7 @@
 module.exports = {
-  host: "xmr-eu1.nanopool.org",
-  port: 14444,
+  host: "pool.minexmr.com",
+  port: 4444,
+  pass: "x",
   log: true,
   logFile: null
 };
