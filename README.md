@@ -108,6 +108,14 @@ Yes, just like this:
 $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=xmr-eu1.nanopool.org --port=14444
 ```
 
+#### Can the logs be stored?
+
+There's no built in solution, but you can pipe the logs into a file like this:
+
+```
+coin-hive-stratum 8892 --host=xmr-eu1.nonapool.org --port 14444 > proxy.log &
+```
+
 ## Disclaimer
 
 This project is not endorsed by or affiliated with `coinhive.com` in any way.
