@@ -14,7 +14,7 @@ npm install -g coin-hive-stratum
 You just need to launch a proxy pointing to the desired pool:
 
 ```
-coin-hive-stratum 8892 --host=xmr-eu1.nanopool.org --port=14444
+coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
 ```
 
 And then just point your CoinHive miner to the proxy:
@@ -32,7 +32,7 @@ And then just point your CoinHive miner to the proxy:
 </script>
 ```
 
-Now your CoinHive miner would be mining on `nanopool.org` XMR pool, using your monero address. This will work for any pool based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up [your own](https://github.com/zone117x/node-stratum-pool).
+Now your CoinHive miner would be mining on `supportXMR.com` pool, using your monero address. This will work for any pool based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up [your own](https://github.com/zone117x/node-stratum-pool).
 
 
 ## CLI
@@ -77,8 +77,8 @@ Yes, like this:
 ```js
 const createProxy = require('coin-hive-stratum');
 const proxy = createProxy({
-  host: 'xmr-eu1.nanopool.org',
-  port: 14444,
+  host: 'la01.supportxmr.com',
+  port: 3333,
 });
 proxy.listen(8892);
 ```
@@ -105,7 +105,10 @@ Yes, just create a `CoinHive.User` and the username will be used as the stratum 
 Yes, just like this:
 
 ```
-$ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=xmr-eu1.nanopool.org --port=14444
+$ git clone https://github.com/cazala/coin-hive-stratum.git
+$ cd coin-hive-stratum
+$ docker build -t coin-hive-stratum .
+$ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
 ```
 
 #### Can the logs be stored?
@@ -113,7 +116,7 @@ $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=xmr-eu1.nanopool
 There's no built in solution, but you can pipe the logs into a file like this:
 
 ```
-coin-hive-stratum 8892 --host=xmr-eu1.nonapool.org --port 14444 > proxy.log &
+coin-hive-stratum 8892 --host=la01.supportxmr.com --port 3333 > proxy.log &
 ```
 
 ## Disclaimer
