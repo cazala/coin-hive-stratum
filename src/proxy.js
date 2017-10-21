@@ -148,7 +148,7 @@ function connectSocket(connection) {
       connection.hashes = 1;
       connection.socket.on("data", function(chunk) {
         connection.buffer += chunk;
-        while (connection.buffer.includes("\n")) {
+        while (connection.buffer !== null && connection.buffer.includes("\n")) {
           const newLineIndex = connection.buffer.indexOf("\n");
           const stratumMessage = connection.buffer.slice(0, newLineIndex);
           connection.buffer = connection.buffer.slice(newLineIndex + 1);
