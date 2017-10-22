@@ -5,7 +5,7 @@ module.exports = class Queue extends EventEmitter {
     this.events = [];
     this.interval = null;
     this.ms = ms;
-    this.baypassed = false;
+    this.bypassed = false;
   }
 
   start() {
