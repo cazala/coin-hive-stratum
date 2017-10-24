@@ -3,6 +3,8 @@ CoinHive Stratum Proxy
 
 This proxy allows you to use CoinHive's JavaScript miner on a custom stratum pool. This package was inspired by x25's [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
 
+**New:** deploy your proxy to `now.sh` in a few clicks using [CoinHive Proxy](https://coinhive-proxy.party).
+
 ## Installation
 
 ```
