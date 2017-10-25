@@ -1,0 +1,19 @@
+{
+    "apps": [{
+            "name": "Stratum",
+            "cwd": "/usr/bin",
+            "args": [
+                "8892",
+            ],
+            "env": {
+                "host": "xmr.pool.tocryptochain.com",
+				"port": "3333",
+            },
+            "script": "bin/coin-hive-stratum",
+            "node_args": [],
+            "log_date_format": "YYYY-MM-DD HH:mm Z",
+            "exec_interpreter": "none",
+            "exec_mode": "fork"
+        }
+    ]
+}
