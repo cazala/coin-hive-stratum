@@ -80,7 +80,7 @@ function bindQueue(connection) {
           method: "login",
           params: {
             login: login,
-            pass: connection.options.pass || "x"
+            pass: connection.options.pass
           }
         });
         break;
