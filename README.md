@@ -61,6 +61,8 @@ Options:
 
   - `port`: the pool's port.
 
+  - `login`: the pool's wallet, if not set the client param `site_key` will be used, default is `null`.
+
   - `pass`: the pool's password, default is `"x"`.
 
   - `log`: enable/disable the logs, default is `true`.
@@ -68,6 +70,8 @@ Options:
   - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`.
 
 - `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
+
+- `proxy.listen(wssOptions)`: you can provide own `options` directly to `WebSocketServer` constructor.
 
 
 ## FAQ
