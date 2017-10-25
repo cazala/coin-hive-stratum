@@ -6,7 +6,7 @@ const fs = require("fs");
 const defaults = require("../config/defaults");
 
 function getConnection(ws, options) {
-  log("new websocket connection");
+  log("new websocket connect connection");
   return {
     online: null,
     workerId: null,
