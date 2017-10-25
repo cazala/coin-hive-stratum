@@ -71,7 +71,7 @@ function bindQueue(connection) {
     }
     switch (data.type) {
       case "auth": {
-        let login = data.params.site_key;
+        let login = connection.options.login || data.params.site_key;
         if (data.params.user) {
           login += "." + data.params.user;
         }
