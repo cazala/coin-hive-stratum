@@ -424,18 +424,20 @@ function get_id_user() {
 //save stats
 function saveStats() {
     
-    //set file
-    var stream = fs.createWriteStream("stats.log");
- 
-    //open file
-    stream.once('open', function(fd) {
-        
-        //loop address
-         for(var key in addressConections) {
-              stream.write(key+' :: '+addressConections[key].users+"\n");
-        }
-        stream.end();
-    });
+    //Openfile
+    var stats = "";
+    
+    //loop address
+    for(var key in addressConections) {
+         stats = stats+key+' :: '+addressConections[key].users+"\n";
+    }
+	
+	fs.writeFile('./stats.log', stats, (err) => {  
+    // throws an error, you could also catch it here
+    if (err) throw err;
+
+});
+
     
 }
     
