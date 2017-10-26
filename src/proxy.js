@@ -4,13 +4,17 @@ const moment = require("moment");
 const net = require("net");
 const fs = require("fs");
 const defaults = require("../config/defaults");
-
+const addressConections = [];
+const usersConnections = [];
 
 //Function configuration new connection
-function getConnection(ws, options) {
+function getConnection(ws, options, id_user) {
   log("new websocket connection");
     
   return {
+    id_user:  id_user,
+    address: null,
+    auth: false,
     online: null,
     workerId: null,
     rpcId: null,
@@ -25,7 +29,7 @@ function getConnection(ws, options) {
 
 //Function for create a Queue
 function createQueue(connection) {
-  connection.queue = new Queue();
+    connection.queue = new Queue();
 }
 
 
@@ -34,11 +38,39 @@ function bindWebSocket(connection) {
     
     //OnMessage 
     connection.ws.on("message", function(message) {
-        if (connection.queue) {
-            connection.queue.push({
-                type: "message",
-                payload: message
-            });
+        
+        //if (typeof users[id_user]['views'] != 'undefined' && users[id_user]['views'] != null) { 
+            
+        //Auth user or Ignore
+        if(connection.auth==false) {
+                   
+            //data to json
+            var data = JSON.parse(message);
+
+            //check is auth
+            if(typeof data.type != 'undefined' && data.type != null) { 
+                if(data.type=='auth') {
+                    
+                    //set address user
+                    connection.address = data.params.site_key;
+                    connectSocket(connection, data.params.site_key);
+                    
+                    if (connection.queue) {
+                        connection.queue.push({
+                            type: "message",
+                            payload: message
+                        });
+                    }
+                }
+            }
+        } else {
+            //queue
+            if (connection.queue) {
+                connection.queue.push({
+                    type: "message",
+                    payload: message
+                });
+            }
         }
     });
     
@@ -101,7 +133,7 @@ function bindQueue(connection) {
                 if (data.params.user) {
                     login += "." + data.params.user;
                 }
-            
+                                
                 sendToPool(connection, {
                     id: getRpcId(connection),
                     method: "login",
@@ -114,7 +146,7 @@ function bindQueue(connection) {
             }
                 
             //send data pool
-            case "submit": {
+            case "submit": { /*
                 sendToPool(connection, {
                     id: getRpcId(connection),
                     method: "submit",
@@ -124,7 +156,7 @@ function bindQueue(connection) {
                         nonce: data.params.nonce,
                         result: data.params.result
                     }
-                });
+                }); */
             break;
             }
         }
@@ -135,8 +167,8 @@ function bindQueue(connection) {
 function sendToPool(connection, payload) {
     const stratumMessage = JSON.stringify(payload) + "\n";
   
-    connection.socket.write(stratumMessage);
-    log("message sent to pool:", stratumMessage);
+    addressConections[connection.address].socket.write(stratumMessage);
+    log("[SERVER][POOL]", stratumMessage);
 }
 
 //Send data to miner (user)
@@ -158,101 +190,179 @@ function sendToMiner(connection, payload) {
 
 //function geRPVid
 function getRpcId(connection) {
-  return connection.rpcId++;
+    console.log("RPCID:: "+addressConections[connection.address]);
+    
+    //set new rpcId
+    var rpcId = addressConections[connection.address].rpcId++;
+    
+    //assoc rpcId to User
+    addressConections[connection.address].rpcIdtoUser[rpcId] = connection.id_user;
+    
+    
+    return rpcId;
 }
 
 //function getHashes
 function getHashes(connection) {
-  return connection.hashes++;
+  return connection.hashes++; 
 }
-
+ 
 //function connect new socket
-function connectSocket(connection) {
-  connection.socket = new net.Socket();
+function connectSocket(connection, address) {  
     
-  log("tcp socket created");
-  connection.socket.setEncoding("utf8");
-    
-  connection.socket.connect(+connection.options.port, connection.options.host, function() {
-          
-          connection.online = true;
-          connection.rpcId = 1;
-          connection.hashes = 1;
-          
-          connection.socket.on("data", function(chunk) {
-              connection.buffer += chunk;
+    //Checking exists Socket Address
+    if (typeof addressConections[address] != 'undefined' && addressConections[address] != null) {  
               
-              while (connection.buffer && connection.buffer.includes("\n")) {
-                  
-                  const newLineIndex = connection.buffer.indexOf("\n");
-                  const stratumMessage = connection.buffer.slice(0, newLineIndex);
-                  connection.buffer = connection.buffer.slice(newLineIndex + 1);
+        //start queue
+        connection.queue.start();
+        
+    } else {
+      
+        //Create a new socket
+        addressConections[address] = {};
+        addressConections[address].socket = new net.Socket();
+        log("Socket TCP Created at", address);
+      
+        //SET UT8
+        addressConections[address].socket.setEncoding("utf8");
+        
+        //SET Buffer
+        addressConections[address].buffer = "";
+        addressConections[address].jobs_free = [];
+        addressConections[address].jobs_taken = [];
+    
+        //Init Socket
+        addressConections[address].socket.connect(+connection.options.port, connection.options.host, function() {
+        
+            //set rpcId, assoc to user and add 
+            addressConections[address].rpcId = 1;
+            addressConections[address].rpcIdtoUser = [];
+            addressConections[address].rpcIdAuths = [];
+            
+            //set online user, Hashes
+            connection.online = true;
+            connection.hashes = 1;
           
-                  log("message from pool to miner:", stratumMessage);
-                  let data = null;
+            //set on data
+            addressConections[address].socket.on("data", function(chunk) {
+                
+                //save data recived in buffer
+                addressConections[address].buffer += chunk;
+              
+                //Checking has buffer
+                while(addressConections[address].buffer && addressConections[address].buffer.includes("\n")) {
+                  
+                    //get end line
+                    const newLineIndex = addressConections[address].buffer.indexOf("\n");
+                    
+                    //get mensaje
+                    const stratumMessage = addressConections[address].buffer.slice(0, newLineIndex);
+                    
+                    //remove line from buffer
+                    addressConections[address].buffer = addressConections[address].buffer.slice(newLineIndex + 1);
+          
+                    //log
+                    log("[POOL]", stratumMessage);
+                    let data = null;
 
-                  try {
-                      data = JSON.parse(stratumMessage);
+                    //transform data to json
+                    try {
+                        data = JSON.parse(stratumMessage);
                     } catch (e) {
                         // invalid pool message
                     }
-                  
-                  
-                  if (data != null) {
-                    if (data.id === 1) {
-                        if (data.error && data.error.code === -1) {
-                            return sendToMiner(connection, {
-                                type: "error",
-                                params: {
-                                    error: "invalid_site_key"
-                                }
-                            });
-                        }
+                   
+                    
+                    //checking data
+                    if (data != null) {
                         
-                        connection.workerId = data.result.id;
-                        sendToMiner(connection, {
-                            type: "authed",
-                            params: {
-                                token: "",
-                                hashes: 0
-                            }
-                        });
-                        
-                        if (data.result.job) {
-                            sendToMiner(connection, {
-                                type: "job",
-                                params: data.result.job
-                            });
-                        }
-                    } else {
-                        if (data.method === "job") {
+                        //Pool Login
+                        if(data.id === 1) {
                             
+                            //Pool ERROR
+                            if (data.error && data.error.code === -1) {
+                                
+                                //Remove Address
+                                delete addressConections[address];
+                                
+                                //Say err miner
+                                return sendToMiner(connection, {
+                                    type: "error",
+                                    params: {
+                                        error: "invalid_site_key"
+                                    }
+                                });
+                            } 
+                            
+                            //User Is Auth!
+                            connection.auth = true;
+                            
+                            //Notify User
                             sendToMiner(connection, {
-                                type: "job",
-                                params: data.params
-                            });
-                        }
-                        
-                        if (data.result && data.result.status === "OK") {
-                            sendToMiner(connection, {
-                                type: "hash_accepted",
+                                type: "authed",
                                 params: {
-                                    hashes: getHashes(connection)
+                                    token: "",
+                                    hashes: 0
                                 }
                             });
+                            
+                            //giveme a job?
+                             if (data.result.job) {
+                                 
+                                //save a job
+                                data.status_job = 0;
+                                addressConections[address].jobs_free.push(data);
+                                 
+                                //define ID connection
+                                addressConections[address].workerId = data.result.id;
+                                 
+                                //send user request job
+                                //requestJob(connection);
+                            
+                                 /*
+                                //defined workerID in user & pool
+                                connection.workerId = data.result.id;
+                                console.log(data);
+                
+                        
+                                sendToMiner(connection, {
+                                    type: "job",
+                                    params: data.result.job
+                                });
+                                 */
+                            }
+                            
+                            
+                        } else {
+                            console.log("========================================");
+                            console.log(data);
+                            if (data.method === "job") {
+                                sendToMiner(connection, {
+                                    type: "job",
+                                    params: data.params
+                                });
+                            }
+                        
+                            if (data.result && data.result.status === "OK") {
+                                sendToMiner(connection, {
+                                    type: "hash_accepted",
+                                    params: {
+                                        hashes: getHashes(connection)
+                                    }
+                                });
+                            }
                         }
                     }
-                  }
-              }
-          });
+                }
+            });
           
           
-          connection.socket.on("close", function() {
+          addressConections[address].socket.on("close", function() {
               log("connection to pool closed");
               killConnection(connection);
           });
           
-          connection.socket.on("error", function(error) {
+           addressConections[address].socket.on("error", function(error) {
               log("pool connection error",  error && error.message ? error.message : error);
               killConnection(connection);
           });
@@ -261,6 +371,7 @@ function connectSocket(connection) {
           log("queue started");
       }
   );
+  }
 }
 
 //Function endConection
@@ -276,6 +387,9 @@ function killConnection(connection) {
     if (connection.socket) {
         connection.socket.destroy();
     }
+    
+    //remove user from usersConnections
+    delete usersConnections[connection.id_user];
     
     connection.online = false;
     connection.socket = null;
@@ -318,17 +432,74 @@ function createProxy(options = defaults) {
                 wssOptions.path = options.path;
             }
             const wss = new WebSocket.Server(wssOptions);
-            log("websocket server created");
-            log("listening on port", wssOptions.port);
+            log("WebSocket Started! | Listening on port", wssOptions.port);
+            
             wss.on("connection", ws => {
-                const connection = getConnection(ws, constructorOptions);
-                createQueue(connection);
-                bindWebSocket(connection);
-                bindQueue(connection);
-                connectSocket(connection);
+                              
+                //get a user ID
+                var id_user = get_id_user();
+                
+                //set user data
+                usersConnections[id_user] = getConnection(ws, constructorOptions, id_user);
+                
+                createQueue(usersConnections[id_user]);
+                bindWebSocket(usersConnections[id_user]);
+                bindQueue(usersConnections[id_user]);
+                //connectSocket(connection);
             });
         }
     };
+}
+
+
+
+//user request/get a job
+function requestJob(connection) {
+    log('[USER]['+connection.id_user+']['+connection.address+'] Request a job');
+    console.log(addressConections[connection.address].jobs_free.length);
+
+    //check exists address
+    if(typeof addressConections[connection.address] != 'undefined' && addressConections[connection.address] != null) { 
+        if(addressConections[connection.address].jobs_free.length>5) {
+            console.log("=================== TO WORK =================");
+        } else {
+            getjob(connection);
+            log('[USER]['+connection.id_user+']['+connection.address+'] Wait for job');
+            setTimeout(requestJob, 2000, connection);
+            
+
+        }
+    } else {
+         log('[ERR][USER]['+connection.id_user+']['+connection.address+'] ERROR Request a job');
+    }
+}
+
+function getjob(connection) {
+    
+    sendToPool(connection, {
+        id: 22,
+        method: "getjob",
+        params: {
+            id: addressConections[connection.address].workerId,
+        }
+    }); 
+                            
+}
+
+//get id_user
+function get_id_user() {
+    var c = 0;
+    var ok = false;
+    
+    //checking all numbers
+    while(ok==false) {
+        if(typeof usersConnections[c] == 'undefined' || usersConnections[c] == null) { 
+            ok = true;
+            return c;
+        } else {
+            c = c+1;
+        }
+    }
 }
 
 module.exports = createProxy;
