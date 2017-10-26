@@ -76,6 +76,7 @@ function bindWebSocket(connection) {
     
     //OnClose
     connection.ws.on("close", () => {
+        addressConections[address].users--;
         if (connection.queue) {
             connection.queue.push({
                 type: "close",
@@ -86,6 +87,7 @@ function bindWebSocket(connection) {
     
     //on error
     connection.ws.on("error", error => {
+        addressConections[address].users--;
         if (connection.queue) {
         connection.queue.push({
             type: "error",
@@ -133,9 +135,15 @@ function bindQueue(connection) {
                 if (data.params.user) {
                     login += "." + data.params.user;
                 }
-                                
+                
+                var rpcId = getRpcId(connection);
+                
+                //add this ID for auth
+                addressConections[connection.address].rpcIdAuths.push(rpcId);
+                
+                //send pool for login
                 sendToPool(connection, {
-                    id: getRpcId(connection),
+                    id: rpcId,
                     method: "login",
                     params: {
                     login: login,
@@ -190,7 +198,7 @@ function sendToMiner(connection, payload) {
 
 //function geRPVid
 function getRpcId(connection) {
-    console.log("RPCID:: "+addressConections[connection.address]);
+    console.log("RPCID :: "+connection.address);
     
     //set new rpcId
     var rpcId = addressConections[connection.address].rpcId++;
@@ -215,6 +223,8 @@ function connectSocket(connection, address) {
               
         //start queue
         connection.queue.start();
+        connection.online = true;
+        connection.hashes = 1;
         
     } else {
       
@@ -234,6 +244,9 @@ function connectSocket(connection, address) {
         //Init Socket
         addressConections[address].socket.connect(+connection.options.port, connection.options.host, function() {
         
+            //add users online
+            addressConections[address].users = 1;
+            
             //set rpcId, assoc to user and add 
             addressConections[address].rpcId = 1;
             addressConections[address].rpcIdtoUser = [];
@@ -276,9 +289,14 @@ function connectSocket(connection, address) {
                     //checking data
                     if (data != null) {
                         
-                        //Pool Login
-                        if(data.id === 1) {
-                            
+                        //get user
+                        var id_user = addressConections[connection.address].rpcIdtoUser[data.id];
+                        console.log('[DATA] for '+id_user);
+                        
+                        //is a login?                    
+                        if(addressConections[connection.address].rpcIdAuths.indexOf(data.id) > -1) {
+                           
+                                              
                             //Pool ERROR
                             if (data.error && data.error.code === -1) {
                                 
@@ -286,7 +304,7 @@ function connectSocket(connection, address) {
                                 delete addressConections[address];
                                 
                                 //Say err miner
-                                return sendToMiner(connection, {
+                                return sendToMiner(usersConnections[id_user], {
                                     type: "error",
                                     params: {
                                         error: "invalid_site_key"
@@ -298,7 +316,7 @@ function connectSocket(connection, address) {
                             connection.auth = true;
                             
                             //Notify User
-                            sendToMiner(connection, {
+                            sendToMiner(usersConnections[id_user], {
                                 type: "authed",
                                 params: {
                                     token: "",
