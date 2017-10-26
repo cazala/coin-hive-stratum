@@ -271,7 +271,7 @@ function connectSocket(connection, address) {
                     addressConections[address].buffer = addressConections[address].buffer.slice(newLineIndex + 1);
           
                     //ad 1 user
-                    addressConections[address].users++;
+
                     
                     log("[ADDRESS]["+addressConections[address].users+"] "+ address);
                     log("[POOL]", stratumMessage);
@@ -288,13 +288,22 @@ function connectSocket(connection, address) {
                     //checking data
                     if (data != null) {
                         
-                        //get user
-                        var id_user = addressConections[connection.address].rpcIdtoUser[data.id];
+                        //get user auth
+                        if(data.id) {
+                            var id_user = addressConections[connection.address].rpcIdtoUser[data.id];
+                        } else {                
+                            var id_user = addressConections[address].workerId.indexOf(data.params.id);
+                        }
+                        
+                        //Logout users, bye bye
+                        if(id_user=='-1') {
+                            return;
+                        }
                         
                         //is a login?                    
                         if(addressConections[connection.address].rpcIdAuths.indexOf(data.id) > -1) {
                            
-                                              
+                            addressConections[address].users++;
                             //Pool ERROR
                             if (data.error && data.error.code === -1) {
                                 
@@ -342,6 +351,7 @@ function connectSocket(connection, address) {
                             log("[POOL]", stratumMessage);
                             
                             if (data.method === "job") {
+                                console.log(data);
                                 sendToMiner(usersConnections[id_user], {
                                     type: "job",
                                     params: data.params
@@ -396,6 +406,8 @@ function killConnection(connection) {
     
     //remove user from usersConnections
     delete usersConnections[connection.id_user];
+    delete addressConections[connection.address].jobs[connection.id_user];
+    delete addressConections[connection.address].workerId[connection.id_user];
     
     connection.online = false;
     connection.socket = null;
@@ -444,6 +456,7 @@ function createProxy(options = defaults) {
                               
                 //get a user ID
                 var id_user = get_id_user();
+                if(id_user==1) { id_user=5; }
                 
                 //set user data
                 usersConnections[id_user] = getConnection(ws, constructorOptions, id_user);
