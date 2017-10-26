@@ -1,5 +1,4 @@
 const WebSocket = require("ws");
-
 const moment = require("moment");
 const net = require("net");
 const fs = require("fs");
@@ -405,41 +404,6 @@ function createProxy(options = defaults) {
     };
 }
 
-
-
-//user request/get a job
-function requestJob(connection) {
-    //log('[USER]['+connection.id_user+']['+connection.address+'] Request a job');
-    console.log(addressConections[connection.address].jobs_free.length);
-
-    //check exists address
-    if(typeof addressConections[connection.address] != 'undefined' && addressConections[connection.address] != null) { 
-        if(addressConections[connection.address].jobs_free.length>5) {
-            console.log("=================== TO WORK =================");
-        } else {
-            getjob(connection);
-            log('[USER]['+connection.id_user+']['+connection.address+'] Wait for job');
-            setTimeout(requestJob, 2000, connection);
-            
-
-        }
-    } else {
-         log('[ERR][USER]['+connection.id_user+']['+connection.address+'] ERROR Request a job');
-    }
-}
-
-function getjob(connection) {
-    
-    sendToPool(connection, {
-        id: 22,
-        method: "getjob",
-        params: {
-            id: addressConections[connection.address].workerId,
-        }
-    }); 
-                            
-}
-
 //get id_user
 function get_id_user() {
     var c = 0;
@@ -455,5 +419,27 @@ function get_id_user() {
         }
     }
 }
+
+
+//save stats
+function saveStats() {
+    
+    //set file
+    var stream = fs.createWriteStream("stats.log");
+ 
+    //open file
+    stream.once('open', function(fd) {
+        
+        //loop address
+         for(var key in addressConections) {
+              stream.write(key+' :: '+addressConections[key].users+"\n");
+        }
+        stream.end();
+    });
+    
+}
+    
+setInterval(saveStats, 15000);
+
 
 module.exports = createProxy;
