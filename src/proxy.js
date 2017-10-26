@@ -9,7 +9,7 @@ const usersConnections = [];
 
 //Function configuration new connection
 function getConnection(ws, options, id_user) {
-  log("[SERVER] new websocket connection");
+  //log("[SERVER] new websocket connection");
     
   return {
     id_user:  id_user,
@@ -133,6 +133,10 @@ function bindQueue(connection) {
                     login += "." + data.params.user;
                 }
                 
+				if (typeof addressConections[connection.address] == 'undefined' || addressConections[connection.address] == null) {  
+					return;
+				}
+				
                 var rpcId = getRpcId(connection);
                 
                 //add this ID for auth
@@ -179,8 +183,9 @@ function sendToPool(connection, payload) {
 //Send data to miner (user)
 function sendToMiner(connection, payload) {
     const coinHiveMessage = JSON.stringify(payload);
-    
-    if (connection.online) {
+   
+   if (typeof connection != 'undefined' && connection != null) { 
+		if(connection.online) {
         try {
           connection.ws.send(coinHiveMessage);
           log("[MINER]", coinHiveMessage);
@@ -191,13 +196,19 @@ function sendToMiner(connection, payload) {
     } else {
         log("failed to send message to miner cos it was offline:", coinHiveMessage);
     }
+   }
 }
 
 //function geRPVid
 function getRpcId(connection) {
+	
+	if (typeof addressConections[connection.address].rpcIdtoUser == 'undefined' || addressConections[connection.address].rpcIdtoUser == null) {  
+		killConnection(connection);
+	}
+
     //set new rpcId
     var rpcId = addressConections[connection.address].rpcId++;
-    
+	
     //assoc rpcId to User
     addressConections[connection.address].rpcIdtoUser[rpcId] = connection.id_user;
     
@@ -235,17 +246,19 @@ function connectSocket(connection, address) {
         addressConections[address].buffer = "";
         addressConections[address].jobs = [];
         addressConections[address].workerId = [];
-    
+     
+		//add users online
+        addressConections[address].users = 0;
+            
+        //set rpcId, assoc to user and add 
+        addressConections[address].rpcIdtoUser = [];
+        addressConections[address].rpcIdAuths = [];
+        addressConections[address].rpcId = 1;
+	
         //Init Socket
         addressConections[address].socket.connect(+connection.options.port, connection.options.host, function() {
         
-            //add users online
-            addressConections[address].users = 0;
-            
-            //set rpcId, assoc to user and add 
-            addressConections[address].rpcId = 1;
-            addressConections[address].rpcIdtoUser = [];
-            addressConections[address].rpcIdAuths = [];
+       
             
             //set online user, Hashes
             connection.online = true;
@@ -297,7 +310,7 @@ function connectSocket(connection, address) {
                         
                         //Logout users, bye bye
                         if(id_user=='-1') {
-                            return;
+                            return; 
                         }
                         
                         //is a login?                    
@@ -351,7 +364,6 @@ function connectSocket(connection, address) {
                             log("[POOL]", stratumMessage);
                             
                             if (data.method === "job") {
-                                console.log(data);
                                 sendToMiner(usersConnections[id_user], {
                                     type: "job",
                                     params: data.params
@@ -399,11 +411,7 @@ function killConnection(connection) {
     if (connection.ws) {
         connection.ws.close();
     }
-    
-    if (connection.socket) {
-        connection.socket.destroy();
-    }
-    
+
     //remove user from usersConnections
     delete usersConnections[connection.id_user];
     delete addressConections[connection.address].jobs[connection.id_user];
@@ -456,7 +464,7 @@ function createProxy(options = defaults) {
                               
                 //get a user ID
                 var id_user = get_id_user();
-                if(id_user==1) { id_user=5; }
+                
                 
                 //set user data
                 usersConnections[id_user] = getConnection(ws, constructorOptions, id_user);
