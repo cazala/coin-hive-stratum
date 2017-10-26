@@ -173,14 +173,7 @@ function connectSocket(connection) {
   log("tcp socket created");
   connection.socket.setEncoding("utf8");
     
-  connection.socket.connect(
-      +connection.options.port,
-      connection.options.host,
-      function() {
-          log("connected to pool");
-          log("host", connection.options.host);
-          log("port", connection.options.port);
-          log("pass", connection.options.pass);
+  connection.socket.connect(+connection.options.port, connection.options.host, function() {
           
           connection.online = true;
           connection.rpcId = 1;
@@ -293,7 +286,7 @@ function killConnection(connection) {
     connection = null;
 }
 
-
+//Function create server proxy
 function createProxy(options = defaults) {
     const constructorOptions = Object.assign({}, defaults, options);
     log = function () {
