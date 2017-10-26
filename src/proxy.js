@@ -9,7 +9,7 @@ const usersConnections = [];
 
 //Function configuration new connection
 function getConnection(ws, options, id_user) {
-  log("new websocket connection");
+  log("[SERVER] new websocket connection");
     
   return {
     id_user:  id_user,
@@ -39,7 +39,6 @@ function bindWebSocket(connection) {
     //OnMessage 
     connection.ws.on("message", function(message) {
         
-        //if (typeof users[id_user]['views'] != 'undefined' && users[id_user]['views'] != null) { 
             
         //Auth user or Ignore
         if(connection.auth==false) {
@@ -76,7 +75,6 @@ function bindWebSocket(connection) {
     
     //OnClose
     connection.ws.on("close", () => {
-        addressConections[address].users--;
         if (connection.queue) {
             connection.queue.push({
                 type: "close",
@@ -87,7 +85,6 @@ function bindWebSocket(connection) {
     
     //on error
     connection.ws.on("error", error => {
-        addressConections[address].users--;
         if (connection.queue) {
         connection.queue.push({
             type: "error",
@@ -116,7 +113,7 @@ function bindQueue(connection) {
     
     //On message
     connection.queue.on("message", function(message) {
-        log("message from miner to pool:", message);
+        log("[MINER][POOL]", message);
         let data = null;
     
         
@@ -154,17 +151,17 @@ function bindQueue(connection) {
             }
                 
             //send data pool
-            case "submit": { /*
+            case "submit": { 
                 sendToPool(connection, {
                     id: getRpcId(connection),
                     method: "submit",
                     params: {
-                        id: connection.workerId,
+                        id: addressConections[connection.address].workerId[connection.id_user],
                         job_id: data.params.job_id,
                         nonce: data.params.nonce,
                         result: data.params.result
                     }
-                }); */
+                }); 
             break;
             }
         }
@@ -176,7 +173,7 @@ function sendToPool(connection, payload) {
     const stratumMessage = JSON.stringify(payload) + "\n";
   
     addressConections[connection.address].socket.write(stratumMessage);
-    log("[SERVER][POOL]", stratumMessage);
+    log("[MINER][POOL]", stratumMessage);
 }
 
 //Send data to miner (user)
@@ -186,7 +183,7 @@ function sendToMiner(connection, payload) {
     if (connection.online) {
         try {
           connection.ws.send(coinHiveMessage);
-          log("message sent to miner:", coinHiveMessage);
+          log("[MINER]", coinHiveMessage);
         } catch (e) {
           log("socket seems to be already closed.");
           killConnection(connection);
@@ -198,8 +195,6 @@ function sendToMiner(connection, payload) {
 
 //function geRPVid
 function getRpcId(connection) {
-    console.log("RPCID :: "+connection.address);
-    
     //set new rpcId
     var rpcId = addressConections[connection.address].rpcId++;
     
@@ -231,21 +226,21 @@ function connectSocket(connection, address) {
         //Create a new socket
         addressConections[address] = {};
         addressConections[address].socket = new net.Socket();
-        log("Socket TCP Created at", address);
+        log("[SERVER][ Socket TCP Created at", address);
       
         //SET UT8
         addressConections[address].socket.setEncoding("utf8");
         
         //SET Buffer
         addressConections[address].buffer = "";
-        addressConections[address].jobs_free = [];
-        addressConections[address].jobs_taken = [];
+        addressConections[address].jobs = [];
+        addressConections[address].workerId = [];
     
         //Init Socket
         addressConections[address].socket.connect(+connection.options.port, connection.options.host, function() {
         
             //add users online
-            addressConections[address].users = 1;
+            addressConections[address].users = 0;
             
             //set rpcId, assoc to user and add 
             addressConections[address].rpcId = 1;
@@ -264,7 +259,8 @@ function connectSocket(connection, address) {
               
                 //Checking has buffer
                 while(addressConections[address].buffer && addressConections[address].buffer.includes("\n")) {
-                  
+                    
+                    
                     //get end line
                     const newLineIndex = addressConections[address].buffer.indexOf("\n");
                     
@@ -274,7 +270,10 @@ function connectSocket(connection, address) {
                     //remove line from buffer
                     addressConections[address].buffer = addressConections[address].buffer.slice(newLineIndex + 1);
           
-                    //log
+                    //ad 1 user
+                    addressConections[address].users++;
+                    
+                    log("[ADDRESS]["+addressConections[address].users+"] "+ address);
                     log("[POOL]", stratumMessage);
                     let data = null;
 
@@ -291,7 +290,6 @@ function connectSocket(connection, address) {
                         
                         //get user
                         var id_user = addressConections[connection.address].rpcIdtoUser[data.id];
-                        console.log('[DATA] for '+id_user);
                         
                         //is a login?                    
                         if(addressConections[connection.address].rpcIdAuths.indexOf(data.id) > -1) {
@@ -324,45 +322,34 @@ function connectSocket(connection, address) {
                                 }
                             });
                             
+                            //define workerID User connection
+                            addressConections[address].workerId[id_user] = data.result.id;
+                            
                             //giveme a job?
                              if (data.result.job) {
                                  
                                 //save a job
-                                data.status_job = 0;
-                                addressConections[address].jobs_free.push(data);
-                                 
-                                //define ID connection
-                                addressConections[address].workerId = data.result.id;
-                                 
-                                //send user request job
-                                //requestJob(connection);
-                            
-                                 /*
-                                //defined workerID in user & pool
-                                connection.workerId = data.result.id;
-                                console.log(data);
-                
-                        
-                                sendToMiner(connection, {
+                                addressConections[address].jobs[id_user] = data;
+                                               
+                                 //send job user
+                                sendToMiner(usersConnections[id_user], {
                                     type: "job",
                                     params: data.result.job
                                 });
-                                 */
-                            }
+                            }                        
+                        } else { //no auth
                             
+                            log("[POOL]", stratumMessage);
                             
-                        } else {
-                            console.log("========================================");
-                            console.log(data);
                             if (data.method === "job") {
-                                sendToMiner(connection, {
+                                sendToMiner(usersConnections[id_user], {
                                     type: "job",
                                     params: data.params
                                 });
                             }
                         
                             if (data.result && data.result.status === "OK") {
-                                sendToMiner(connection, {
+                                sendToMiner(usersConnections[id_user], {
                                     type: "hash_accepted",
                                     params: {
                                         hashes: getHashes(connection)
@@ -386,7 +373,6 @@ function connectSocket(connection, address) {
           });
       
           connection.queue.start();
-          log("queue started");
       }
   );
   }
@@ -394,6 +380,8 @@ function connectSocket(connection, address) {
 
 //Function endConection
 function killConnection(connection) {
+    addressConections[connection.address].users = addressConections[connection.address].users -1;
+
     if (connection.queue) {
         connection.queue.stop();
     }
