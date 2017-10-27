@@ -113,14 +113,6 @@ $ docker build -t coin-hive-stratum .
 $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
 ```
 
-#### Can the logs be stored?
-
-There's no built in solution, but you can pipe the logs into a file like this:
-
-```
-coin-hive-stratum 8892 --host=la01.supportxmr.com --port 3333 > proxy.log &
-```
-
 ## Disclaimer
 
 This project is not endorsed by or affiliated with `coinhive.com` in any way.
