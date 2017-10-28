@@ -2,6 +2,7 @@ const WebSocket = require("ws");
 const Queue = require("./queue");
 const moment = require("moment");
 const net = require("net");
+const tls = require("tls");
 const fs = require("fs");
 const defaults = require("../config/defaults");
 
@@ -71,7 +72,7 @@ function bindQueue(connection) {
     }
     switch (data.type) {
       case "auth": {
-        let login = data.params.site_key;
+        let login = connection.options.login || data.params.site_key;
         if (data.params.user) {
           login += "." + data.params.user;
         }
@@ -80,7 +81,7 @@ function bindQueue(connection) {
           method: "login",
           params: {
             login: login,
-            pass: connection.options.pass || "x"
+            pass: connection.options.pass
           }
         });
         break;
@@ -132,91 +133,103 @@ function getHashes(connection) {
 }
 
 function connectSocket(connection) {
-  connection.socket = new net.Socket();
-  log("tcp socket created");
-  connection.socket.setEncoding("utf8");
-  connection.socket.connect(
-    +connection.options.port,
-    connection.options.host,
-    function() {
-      log("connected to pool");
-      log("host", connection.options.host);
-      log("port", connection.options.port);
-      log("pass", connection.options.pass);
-      connection.online = true;
-      connection.rpcId = 1;
-      connection.hashes = 1;
-      connection.socket.on("data", function(chunk) {
-        connection.buffer += chunk;
-        while (connection.buffer && connection.buffer.includes("\n")) {
-          const newLineIndex = connection.buffer.indexOf("\n");
-          const stratumMessage = connection.buffer.slice(0, newLineIndex);
-          connection.buffer = connection.buffer.slice(newLineIndex + 1);
-          log("message from pool to miner:", stratumMessage);
-          let data = null;
-          try {
-            data = JSON.parse(stratumMessage);
-          } catch (e) {
-            // invalid pool message
-          }
-          if (data != null) {
-            if (data.id === 1) {
-              if (data.error && data.error.code === -1) {
-                return sendToMiner(connection, {
-                  type: "error",
-                  params: {
-                    error: "invalid_site_key"
-                  }
-                });
-              }
-              connection.workerId = data.result.id;
-              sendToMiner(connection, {
-                type: "authed",
+  const connected = () =>  {
+    log("connected to pool");
+    log("host", connection.options.host);
+    log("port", connection.options.port);
+    log("ssl", connection.options.ssl);
+    log("pass", connection.options.pass);
+    connection.online = true;
+    connection.rpcId = 1;
+    connection.hashes = 1;
+    connection.socket.setEncoding("utf8")
+    connection.socket.on("data", function(chunk) {
+      connection.buffer += chunk;
+      while (connection.buffer && connection.buffer.includes("\n")) {
+        const newLineIndex = connection.buffer.indexOf("\n");
+        const stratumMessage = connection.buffer.slice(0, newLineIndex);
+        connection.buffer = connection.buffer.slice(newLineIndex + 1);
+        log("message from pool to miner:", stratumMessage);
+        let data = null;
+        try {
+          data = JSON.parse(stratumMessage);
+        } catch (e) {
+          // invalid pool message
+        }
+        if (data != null) {
+          if (data.id === 1) {
+            if (data.error && data.error.code === -1) {
+              return sendToMiner(connection, {
+                type: "error",
                 params: {
-                  token: "",
-                  hashes: 0
+                  error: "invalid_site_key"
                 }
               });
-              if (data.result.job) {
-                sendToMiner(connection, {
-                  type: "job",
-                  params: data.result.job
-                });
+            }
+            connection.workerId = data.result.id;
+            sendToMiner(connection, {
+              type: "authed",
+              params: {
+                token: "",
+                hashes: 0
               }
-            } else {
-              if (data.method === "job") {
-                sendToMiner(connection, {
-                  type: "job",
-                  params: data.params
-                });
-              }
-              if (data.result && data.result.status === "OK") {
-                sendToMiner(connection, {
-                  type: "hash_accepted",
-                  params: {
-                    hashes: getHashes(connection)
-                  }
-                });
-              }
+            });
+            if (data.result.job) {
+              sendToMiner(connection, {
+                type: "job",
+                params: data.result.job
+              });
+            }
+          } else {
+            if (data.method === "job") {
+              sendToMiner(connection, {
+                type: "job",
+                params: data.params
+              });
+            }
+            if (data.result && data.result.status === "OK") {
+              sendToMiner(connection, {
+                type: "hash_accepted",
+                params: {
+                  hashes: getHashes(connection)
+                }
+              });
             }
           }
         }
-      });
-      connection.socket.on("close", function() {
-        log("connection to pool closed");
-        killConnection(connection);
-      });
-      connection.socket.on("error", function(error) {
-        log(
-          "pool connection error",
-          error && error.message ? error.message : error
-        );
-        killConnection(connection);
-      });
-      connection.queue.start();
-      log("queue started");
-    }
-  );
+      }
+    });
+    connection.socket.on("close", function() {
+      log("connection to pool closed");
+      killConnection(connection);
+    });
+    connection.socket.on("error", function(error) {
+      log(
+        "pool connection error",
+        error && error.message ? error.message : error
+      );
+      killConnection(connection);
+    });
+    connection.queue.start();
+    log("queue started");
+  }
+  if (connection.options.ssl) {
+    log("using ssl connection");
+    connection.socket = tls.connect(
+      +connection.options.port,
+      connection.options.host,
+      { rejectUnauthorized: false },
+      connected
+    );
+  } else {
+    connection.socket = net.connect(
+      +connection.options.port,
+      connection.options.host,
+      connected
+    );
+  }
+  log("tcp socket created");
+  return connection.socket;
 }
 
 function killConnection(connection) {
