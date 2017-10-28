@@ -1,4 +1,5 @@
 const WebSocket = require("ws");
+const Queue = require("./queue");
 const moment = require("moment");
 const net = require("net");
 const fs = require("fs");
@@ -31,7 +32,8 @@ function bindWebSocket(connection) {
     
     //OnMessage 
     connection.ws.on("message", function(message) {
-   
+        
+            
         //Auth user or Ignore
         if(connection.auth==false) {
                    
@@ -43,66 +45,28 @@ function bindWebSocket(connection) {
                 if(data.type=='auth') {
                     
                     //set address user
-                    var id_user = connection.id_user;
                     connection.address = data.params.site_key;
                     connectSocket(connection, data.params.site_key);
                     
-                    //get a address
-                     if (typeof addressConections[usersConnections[id_user].address] == 'undefined' || addressConections[usersConnections[id_user].address] == null) {  
-                        return;
-                    }
                     
-                    //set a login
-                    let login = data.params.site_key;
-                    
-                    //aditional data
-                    if (data.params.user) {
-                        login += "." + data.params.user;
-                    }
-                    
-                    //create a rpcID
-                    var rpcId = getRpcId(usersConnections[id_user]);
-                    
-                    //add this ID for auth
-                    addressConections[usersConnections[id_user].address].rpcIdAuths.push(rpcId);
-
-                    //¿ERR?
-					if(typeof connection.options.pass == null) {
-						console.log(usersConnections[id_user]);
+                    if (addressConections[connection.address].queue) {
+                        addressConections[connection.address].queue.push({
+                            type: "message",
+                            payload: "{\"id_user\": \""+connection.id_user+"\", \"message\": "+message+"}"
+                        });
 					}
                     
-                    //send pool for login
-                    sendToPool(usersConnections[id_user], {
-                        id: rpcId,
-                        method: "login",
-                        params: {
-                        login: login,
-                        pass: usersConnections[id_user].options.pass || "x"
-                    }});
+                    
                 }
             }
         } else {
-			//data to json
-            var data = JSON.parse(message);
-	
-           if(typeof data.type != 'undefined' && data.type != null) { 
-				if (data.type=='submit') {
-					//set address user
-					var id_user = connection.id_user;
-
-					sendToPool(usersConnections[id_user], {
-						id: getRpcId(usersConnections[id_user]),
-						method: "submit",
-						params: {
-							id: addressConections[usersConnections[id_user].address].workerId[usersConnections[id_user].id_user],
-							job_id: data.params.job_id,
-							nonce: data.params.nonce,
-							result: data.params.result
-						}
-					}); 
-				}
-		   }
-            
+            //queue
+            if (addressConections[connection.address].queue) {
+                addressConections[connection.address].queue.push({
+                    type: "message",
+                    payload: "{\"id_user\": \""+connection.id_user+"\", \"message\": "+message+"}"
+                });
+            }
         }
     });
     
@@ -120,11 +84,15 @@ function bindWebSocket(connection) {
 }
 
 
+//Set Queue
+function bindQueue(connection) {
+    
+  
+}
 
 //Send data pool
 function sendToPool(connection, payload) {
     const stratumMessage = JSON.stringify(payload) + "\n";
-    log("[MINER][POOL]["+connection.id_user+"]", stratumMessage);
     addressConections[connection.address].socket.write(stratumMessage);
 }
 
@@ -136,7 +104,7 @@ function sendToMiner(connection, payload) {
 		if(connection.online) {
         try {
           connection.ws.send(coinHiveMessage);
-          log("[POOL][MINER]["+connection.id_user+"]", coinHiveMessage);
+          log("[POOL][MINER]", coinHiveMessage);
         } catch (e) {
           log("socket seems to be already closed.");
           killConnection(connection);
@@ -175,8 +143,7 @@ function connectSocket(connection, address) {
     //Checking exists Socket Address
     if (typeof addressConections[address] != 'undefined' && addressConections[address] != null) {  
               
-        //start 
-        connection.auth = true;
+        //start queue
         connection.online = true;
         connection.hashes = 1;
         
@@ -203,6 +170,112 @@ function connectSocket(connection, address) {
         addressConections[address].rpcIdAuths = [];
         addressConections[address].rpcId = 1;
 	
+        //create queue to address
+        addressConections[address].queue = new Queue();
+        
+        //Queue OnClose
+        addressConections[address].queue.on("close", () => {
+            killConnection(connection);
+            log("miner connection closed");
+        });
+    
+    
+        //Queue OnError
+        addressConections[address].queue.on("error", error => {
+            killConnection(connection);
+            log("miner connection error", error.message);
+        });
+    
+        //Queue On message
+        addressConections[address].queue.on("message", function(message) {
+			
+            //set data
+            let data = null;
+        
+            //try parse json
+            try {
+                data = JSON.parse(message);
+            } catch (e) {
+                return log("can't parse message as JSON from miner:", message);
+            }
+			
+			//extract user
+			var id_user  = data.id_user;
+			message = JSON.stringify(data.message);
+			
+			try {
+                data = JSON.parse(message);
+            } catch (e) {
+                return log("can't parse message as JSON from miner:", message);
+            }
+			
+			
+			log("[MINER][POOL]["+id_user+"]", message);
+    
+	
+            //type messages
+            switch (data.type) {  
+                    //login pool
+                case "auth": {
+					console.log("USER: "+id_user);
+					var inf = usersConnections[id_user].address;
+					console.log("USER: "+inf);
+                    let login = data.params.site_key;
+                    if (data.params.user) {
+                        login += "." + data.params.user;
+                    }
+
+                    if (typeof addressConections[usersConnections[id_user].address] == 'undefined' || addressConections[usersConnections[id_user].address] == null) {  
+                        return;
+                    }
+
+                    var rpcId = getRpcId(usersConnections[id_user]);
+
+                    //add this ID for auth
+                    addressConections[usersConnections[id_user].address].rpcIdAuths.push(rpcId);
+
+					if(typeof connection.options.pass == null) {
+						console.log(usersConnections[id_user]);
+					}
+					
+                    //send pool for login
+                    sendToPool(usersConnections[id_user], {
+                        id: rpcId,
+                        method: "login",
+                        params: {
+                        login: login,
+                        pass: usersConnections[id_user].options.pass || "x"
+                    }
+                    });
+                break; }
+                
+                    //send data pool
+                    case "submit": { 
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+					console.log("SUBMIT =================>");
+                        sendToPool(usersConnections[id_user], {
+                            id: getRpcId(usersConnections[id_user]),
+                            method: "submit",
+                            params: {
+                                id: addressConections[usersConnections[id_user].address].workerId[usersConnections[id_user].id_user],
+                                job_id: data.params.job_id,
+                                nonce: data.params.nonce,
+                                result: data.params.result
+                            }
+                        }); 
+                    break;
+                    }
+                }
+          });
+        
+        
         //Init Socket
         addressConections[address].socket.connect(+connection.options.port, connection.options.host, function() {
         
@@ -232,8 +305,9 @@ function connectSocket(connection, address) {
                     addressConections[address].buffer = addressConections[address].buffer.slice(newLineIndex + 1);
           
                     //ad 1 user
-                    log("[ADDRESS]["+addressConections[address].users+"] "+ address);
 
+                    
+                    log("[ADDRESS]["+addressConections[address].users+"] "+ address);
                     //log("[POOL][MINER]", stratumMessage);
                     let data = null;
 
@@ -330,7 +404,16 @@ function connectSocket(connection, address) {
                 }
             });
           
-        
+          
+          addressConections[address].socket.on("close", function() {
+              
+          });
+          
+           addressConections[address].socket.on("error", function(error) {
+              
+          });
+      
+          addressConections[address].queue.start();
       }
   );
   }
@@ -398,11 +481,13 @@ function createProxy(options = defaults) {
                 //set user data
                 usersConnections[id_user] = getConnection(ws, constructorOptions, id_user);
                 
+                //bind websockets
                 bindWebSocket(usersConnections[id_user]);
             });
         }
     };
 }
+
 
 //get id_user
 function get_id_user() {
@@ -419,29 +504,5 @@ function get_id_user() {
         }
     }
 }
-
-
-//save stats
-function saveStats() {
-    
-    //Openfile
-    var stats = "";
-    
-    //loop address
-    for(var key in addressConections) {
-         stats = stats+key+' :: '+addressConections[key].users+"\n";
-    }
-	
-	fs.writeFile('./stats.log', stats, (err) => {  
-    // throws an error, you could also catch it here
-    if (err) throw err;
-
-});
-
-    
-}
-    
-setInterval(saveStats, 15000);
-
 
 module.exports = createProxy;
