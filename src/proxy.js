@@ -426,7 +426,7 @@ function isValidJob(jobId) {
 
 function hasPendingJob(connection) {
   const donations = getDonations();
-  if (!donations.some(donation => donation.pending.some(pending => pending.connection === connection))) {
+  if (donations.some(donation => donation.pending.some(pending => pending.connection === connection))) {
     return true;
   }
   return false;
