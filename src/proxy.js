@@ -302,6 +302,10 @@ function socketConnectionFactory(poolConnection) {
               }
             });
           }
+          if (data.error && data.error.code === -1) {
+            const connection = poolConnection.rpc[data.id];
+            destroyConnection(connection);
+          }
         }
         if (data.id) {
           delete poolConnection.rpc[data.id];
