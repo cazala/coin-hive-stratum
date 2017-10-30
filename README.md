@@ -129,6 +129,40 @@ $ docker build -t coin-hive-stratum .
 $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
 ```
 
+#### How can I make my proxy work with wss://?
+
+You will need to create an HTTPS server and pass it to your proxy, like this:
+
+```js
+// Create your proxy
+const createProxy = require("coin-hive-stratum");
+const proxy = createProxy({
+  host: "la01.supportxmr.com",
+  port: 3333
+});
+
+
+// Create an HTTPS server
+const server = require("https").createServer({
+  key: fs.readFileSync("./server.key"),
+  cert: fs.readFileSync("./server.crt")
+});
+server.listen(8892);
+
+// Pass your HTTPS server to the proxy
+proxy.listen({
+  server: server
+});
+```
+
+You can generate self-signed certificates to test this by using this command:
+
+```
+openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt
+```
+
+You will need to add these certificates to your trusted certificates, otherwise the browser will complain.
+
 ## Disclaimer
 
 This project is not endorsed by or affiliated with `coinhive.com` in any way.
