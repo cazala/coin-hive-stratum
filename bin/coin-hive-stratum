@@ -21,7 +21,13 @@ const options = {
   port: argv.port || defaults.port,
   host: argv.host || defaults.host,
   pass: argv.pass || defaults.pass,
-  logFile: argv["log-file"] || defaults.logFile
+  tls: argv.hasOwnProperty("tls") || defaults.tls,
+  login: argv.login || defaults.login,
+  user: argv.user || defaults.user,
+  diff: argv.diff || defaults.diff,
+  logFile: argv["log-file"] || defaults.logFile,
+  statsFile: argv["stats-file"] || defaults.statsFile,
+  dynamicPool: argv["dynamic-pool"] || defaults.dynamicPool
 };
 
 if (argv.log === "false") {

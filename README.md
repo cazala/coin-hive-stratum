@@ -3,8 +3,6 @@ CoinHive Stratum Proxy
 
 This proxy allows you to use CoinHive's JavaScript miner on a custom stratum pool. This package was inspired by x25's [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
 
-**New:** deploy your proxy to `now.sh` in a few clicks using [CoinHive Proxy](https://coinhive-proxy.party).
-
 ## Installation
 
 ```
@@ -46,11 +44,17 @@ Usage: 'coin-hive-stratum <port>'
 
 Options:
 
-  --host      The pool's host.
-  --port      The pool's port.
-  --pass      The pool's password, by default it's "x"
-  --log       Enable/Disable the logs, default is true
-  --log-file  A filename where the logs will be stored, ie: proxy.log
+  --host          The pool's host.
+  --port          The pool's port.
+  --pass          The pool's password, by default it's "x".
+  --tls           Use TLS to connect to the pool.
+  --login         A fixed wallet for all the miners.
+  --user          A fixed user for all the miners.
+  --diff          A fixed difficulty for all the miner. This is not supported by all the pools.
+  --log           Enable/Disable the logs, default is true
+  --log-file      A filename where the logs will be stored, ie: proxy.log
+  --stats-file    A filename where the stats will be stored, ie: proxy.stats
+  --dynamic-pool  If true, the pool can be set dynamically by sending a ?pool=host:port:pass query param to the websocket endpoint
 ```
 
 ## API
@@ -63,11 +67,23 @@ Options:
 
   - `pass`: the pool's password, default is `"x"`.
 
+  - `tls`: use TLS to connect to the pool.
+
+  - `login`: a fixed wallet for all the miners.
+  
+  - `user`: a fixed user for all the miners.
+
+  - `diff`: a fixed difficulty for all the miners.
+
   - `log`: enable/disable the logs, default is `true`.
 
   - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`.
 
-- `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
+  - `statsFile`: a filename where the stats will be stored, ie: `"proxy.stats"`
+
+  - `dynamicPool`: if true, the pool can be set dynamically by sending a `?pool=host:port:pass` query param to the websocket endpoint.
+
+- `proxy.listen(port|wssOptions)`: launches the server listening on the specified port, which by default is `8892`. You can also provide the options for the `WebSocketServer`, this is useful for setting up SSL.
 
 
 ## FAQ
@@ -119,7 +135,7 @@ This project is not endorsed by or affiliated with `coinhive.com` in any way.
 
 ## Support
 
-If you like this project and you want to show your support, you can buy me a beer with [magic internet money](https://i.imgur.com/mScSiOo.jpg):
+This project is configured with a 1% donation. If you wish to disable it, please consider doing a one time donation and buy me a beer with [magic internet money](https://i.imgur.com/mScSiOo.jpg):
 
 ```
 BTC: 16ePagGBbHfm2d6esjMXcUBTNgqpnLWNeK

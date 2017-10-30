@@ -1,4 +1,7 @@
 node_modules
+static
 test.js
 test.html
 proxy.log
+stats.log
+yarn.lock
