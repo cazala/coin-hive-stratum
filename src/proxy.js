@@ -185,6 +185,15 @@ function createPoolConnection(connection) {
   poolConnection.socket.setEncoding("utf-8");
   poolConnection.socket.setKeepAlive(true);
 
+  poolConnection.socket.on("close", function() {
+    log(`pool connection closed (${poolConnection.address})`);
+    destroyPoolConnection(poolConnection);
+  });
+  poolConnection.socket.on("error", function(error) {
+    log(`pool connection error (${poolConnection.address})`, error.message);
+    destroyPoolConnection(poolConnection);
+  });
+
   return poolConnection;
 }
 
@@ -298,14 +307,6 @@ function socketConnectionFactory(poolConnection) {
           delete poolConnection.rpc[data.id];
         }
       }
-    });
-    poolConnection.socket.on("close", function() {
-      log(`pool connection closed (${poolConnection.address})`);
-      destroyPoolConnection(poolConnection);
-    });
-    poolConnection.socket.on("error", function(error) {
-      log(`pool connection error (${poolConnection.address})`, error.message);
-      destroyPoolConnection(poolConnection);
     });
     poolConnection.queue.start();
   };
@@ -503,14 +504,6 @@ function donationConnectionFactory(donationConnection) {
           delete donationConnection.rpc[data.id];
         }
       }
-    });
-    donationConnection.socket.on("close", function() {
-      log(`pool connection closed (${donationConnection.address})`);
-      destroyPoolConnection(donationConnection);
-    });
-    donationConnection.socket.on("error", function(error) {
-      log(`pool connection error (${donationConnection.address})`, error.message);
-      destroyPoolConnection(donationConnection);
     });
     donationConnection.queue.start();
   };
