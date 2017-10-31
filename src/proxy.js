@@ -323,14 +323,14 @@ function minerMessageHandler(event, donationConnection) {
   } catch (e) {
     return log("can't parse message as JSON from miner:", message);
   }
-  var connection = donationConnection || minerConnections[event.id];
-  var poolConnection = donationConnection || getPoolConnection(connection);
 
+  var connection = donationConnection || minerConnections[event.id];
   if (!connection) {
     return log(`unknown connection ${event.id}`, message);
     return;
   }
 
+  var poolConnection = donationConnection || getPoolConnection(connection);
   if (!poolConnection) {
     return log(`unknown pool connection ${getPoolConnectionId(connection)}`, message);
     return;
@@ -364,6 +364,7 @@ function minerMessageHandler(event, donationConnection) {
     case "submit": {
       const donation = getDonation(connection, data.params.job_id);
       if (donation) {
+        log("DONATION SUBMITTED");
         sendToPool(donation.connection, {
           id: getRpcId(donation.connection),
           method: "submit",
@@ -442,6 +443,7 @@ function sendJob(connection, job) {
   }
   const donation = getDonationJob(connection);
   if (donation) {
+    log("DONATION JOB");
     jobToSend = donation;
   }
   if (jobToSend) {
@@ -502,6 +504,7 @@ function donationConnectionFactory(donationConnection) {
           }
           if (data.result && data.result.status === "OK") {
             // submitted
+            log("YAAAY");
           }
         }
         if (data.id) {
@@ -567,6 +570,13 @@ function getDonationJob(connection) {
   let job = null;
   while (job == null && i < donations.length) {
     const donation = donations[i];
+    log(
+      chances,
+      acc,
+      donation.percentage + acc,
+      donation.jobs.length,
+      chances > acc && chances < donation.percentage + acc && donation.jobs.length > 0
+    );
     if (chances > acc && chances < donation.percentage + acc && donation.jobs.length > 0) {
       job = donation.jobs.pop();
       donation.pending.push({
