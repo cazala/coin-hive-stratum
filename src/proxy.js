@@ -364,7 +364,6 @@ function minerMessageHandler(event, donationConnection) {
     case "submit": {
       const donation = getDonation(connection, data.params.job_id);
       if (donation) {
-        log("DONATION SUBMITTED");
         sendToPool(donation.connection, {
           id: getRpcId(donation.connection),
           method: "submit",
@@ -443,7 +442,6 @@ function sendJob(connection, job) {
   }
   const donation = getDonationJob(connection);
   if (donation) {
-    log("DONATION JOB");
     jobToSend = donation;
   }
   if (jobToSend) {
@@ -504,7 +502,6 @@ function donationConnectionFactory(donationConnection) {
           }
           if (data.result && data.result.status === "OK") {
             // submitted
-            log("YAAAY");
           }
         }
         if (data.id) {
