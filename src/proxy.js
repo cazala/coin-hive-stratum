@@ -321,18 +321,18 @@ function minerMessageHandler(event, donationConnection) {
   try {
     data = JSON.parse(event.message);
   } catch (e) {
-    return log("can't parse message as JSON from miner:", message);
+    return log("can't parse message as JSON from miner:", event.message);
   }
 
   var connection = donationConnection || minerConnections[event.id];
   if (!connection) {
-    return log(`unknown connection ${event.id}`, message);
+    return log(`unknown connection ${event.id}`, event.message);
     return;
   }
 
   var poolConnection = donationConnection || getPoolConnection(connection);
   if (!poolConnection) {
-    return log(`unknown pool connection ${getPoolConnectionId(connection)}`, message);
+    return log(`unknown pool connection ${getPoolConnectionId(connection)}`, event.message);
     return;
   }
 
@@ -380,7 +380,7 @@ function minerMessageHandler(event, donationConnection) {
             hashes: getHashes(connection)
           }
         });
-      } else if (isValidJob(data.params.job_id)) {
+      } else {
         sendToPool(poolConnection, {
           id: getRpcId(connection),
           method: "submit",
@@ -416,38 +416,18 @@ function sendToMiner(connection, payload) {
   }
 }
 
-function isValidJob(jobId) {
-  const donations = getDonations();
-  if (!donations.some(donation => donation.submitted.some(x => x === jobId))) {
-    return true;
-  }
-  return false;
-}
-
-function hasPendingJob(connection) {
-  const donations = getDonations();
-  if (donations.some(donation => donation.pending.some(pending => pending.connection === connection))) {
-    return true;
-  }
-  return false;
-}
-
 function sendJob(connection, job) {
   if (!connection) {
     return;
   }
-  let jobToSend = job;
-  if (hasPendingJob(connection)) {
-    jobToSend = null;
-  }
   const donation = getDonationJob(connection);
   if (donation) {
-    jobToSend = donation;
+    job = donation;
   }
-  if (jobToSend) {
+  if (job) {
     sendToMiner(connection, {
       type: "job",
-      params: jobToSend
+      params: job
     });
   }
 }
@@ -567,13 +547,6 @@ function getDonationJob(connection) {
   let job = null;
   while (job == null && i < donations.length) {
     const donation = donations[i];
-    log(
-      chances,
-      acc,
-      donation.percentage + acc,
-      donation.jobs.length,
-      chances > acc && chances < donation.percentage + acc && donation.jobs.length > 0
-    );
     if (chances > acc && chances < donation.percentage + acc && donation.jobs.length > 0) {
       job = donation.jobs.pop();
       donation.pending.push({
