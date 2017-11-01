@@ -603,7 +603,7 @@ function createProxy(constructorOptions = defaults) {
       if (wssOptions.server) {
         log("using custom server", wssOptions.port);
       }
-      wss.on("connection", async (ws, req) => {
+      wss.on("connection", (ws, req) => {
         const params = require("url").parse(req.url, true).query;
         if (params.pool && options.dynamicPool) {
           const split = params.pool.split(":");
