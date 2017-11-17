@@ -333,7 +333,10 @@ function minerMessageHandler(event, donationConnection) {
   var poolConnection = donationConnection || getPoolConnection(connection);
   if (!poolConnection) {
     return log(`unknown pool connection ${getPoolConnectionId(connection)}`, event.message);
-    return;
+  }
+
+  if (!poolConnection.online) {
+    return log(`pool connection offline`);
   }
 
   log(`message from miner (${connection.workerId || "unauthenticated"})`, event.message);
@@ -350,15 +353,17 @@ function minerMessageHandler(event, donationConnection) {
         login += "+" + diff;
       }
       var rpcId = getRpcId(connection);
-      poolConnection.auths[rpcId] = connection;
-      sendToPool(poolConnection, {
-        id: rpcId,
-        method: "login",
-        params: {
-          login: login,
-          pass: connection.pass
-        }
-      });
+      if (poolConnection.auths) {
+        poolConnection.auths[rpcId] = connection;
+        sendToPool(poolConnection, {
+          id: rpcId,
+          method: "login",
+          params: {
+            login: login,
+            pass: connection.pass
+          }
+        });
+      }
       break;
     }
     case "submit": {
