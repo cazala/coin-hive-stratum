@@ -1,5 +1,6 @@
 const EventEmitter = require("events");
-module.exports = class Queue extends EventEmitter {
+
+class Queue extends EventEmitter {
   constructor(ms = 100) {
     super();
     this.events = [];
@@ -41,4 +42,6 @@ module.exports = class Queue extends EventEmitter {
       this.events.push(event);
     }
   }
-};
+}
+
+module.exports = Queue;
