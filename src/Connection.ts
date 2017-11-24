@@ -1,25 +1,47 @@
-const EventEmitter = require("events");
-const uuid = require("uuid");
-const net = require("net");
-const tls = require("tls");
-const Queue = require("./Queue");
+import * as EventEmitter from "events";
+import * as net from "net";
+import * as tls from "tls";
+import * as uuid from "uuid";
+import Miner from "./Miner";
+import Queue from "./Queue";
+import {
+  Dictionary,
+  Socket,
+  StratumRequestParams,
+  StratumResponse,
+  StratumRequest,
+  StratumJob,
+  StratumLoginResult,
+  RPCMessage,
+  StratumKeepAlive
+} from "./types";
+
+export type Options = {
+  host: string;
+  port: number;
+  ssl: boolean;
+};
 
 class Connection extends EventEmitter {
-  constructor({ host, port, ssl }) {
+  id: string = uuid.v4();
+  host: string = null;
+  port: number = null;
+  ssl: boolean = null;
+  online: boolean = null;
+  socket: Socket = null;
+  queue: Queue = null;
+  buffer: string = "";
+  rpcId: number = 1;
+  rpc: Dictionary<RPCMessage> = {};
+  auth: Dictionary<string> = {};
+  minerId: Dictionary<string> = {};
+  miners: Miner[] = [];
+
+  constructor(options: Options) {
     super();
-    this.id = uuid.v4();
-    this.online = false;
-    this.host = host;
-    this.port = port;
-    this.ssl = ssl;
-    this.socket = null;
-    this.queue = null;
-    this.buffer = "";
-    this.rpcId = 1;
-    this.rpc = {};
-    this.auth = {};
-    this.minerId = {};
-    this.miners = [];
+    this.host = options.host;
+    this.port = options.port;
+    this.ssl = options.ssl;
   }
 
   connect() {
@@ -71,11 +93,10 @@ class Connection extends EventEmitter {
         const stratumMessage = this.buffer.slice(0, newLineIndex);
         this.buffer = this.buffer.slice(newLineIndex + 1);
         this.receive(stratumMessage);
-        console.log("message from pool", stratumMessage);
       }
     });
     // message from miner
-    this.queue.on("message", message => {
+    this.queue.on("message", (message: StratumRequest) => {
       if (!this.socket.writable) {
         console.warn(
           `couldn't send message to pool (${this.host}:${this.port}) because socket is not writable: ${message}`
@@ -83,8 +104,7 @@ class Connection extends EventEmitter {
         return false;
       }
       try {
-        console.log("message to pool", message);
-        this.socket.write(message + "\n");
+        this.socket.write(JSON.stringify(message) + "\n");
       } catch (e) {
         console.warn(`failed to send message to pool (${this.host}:${this.port}): ${message}`);
       }
@@ -94,98 +114,122 @@ class Connection extends EventEmitter {
     this.emit("ready");
   }
 
-  receive(message) {
+  receive(message: string) {
     let data = null;
     try {
       data = JSON.parse(message);
     } catch (e) {
       return console.warn(`invalid stratum message:`, message);
     }
-    // it's a reply
+    // it's a response
     if (data.id) {
-      if (!this.rpc[data.id]) {
-        console.warn(`dropping reply for a miner that is not online anymore`, message, this.rpc);
+      const response = data as StratumResponse;
+      if (!this.rpc[response.id]) {
+        // miner is not online anymore
         return;
       }
-      const minerId = this.rpc[data.id].minerId;
-      const method = this.rpc[data.id].message.method;
-      delete this.rpc[data.id];
+      const minerId = this.rpc[response.id].minerId;
+      const method = this.rpc[response.id].message.method;
+      delete this.rpc[response.id];
       switch (method) {
         case "login": {
-          if (data.error && data.error.code === -1) {
+          if (response.error && response.error.code === -1) {
             this.emit(minerId + ":error", {
               error: "invalid_site_key"
             });
             console.warn(`invalid site key (${minerId})`);
             return;
           }
-          const auth = data.result.id;
+          const result = response.result as StratumLoginResult;
+          const auth = result.id;
           this.auth[minerId] = auth;
           this.minerId[auth] = minerId;
           this.emit(minerId + ":authed", auth);
-          if (data.result.job) {
-            this.emit(minerId + ":job", data.result.job);
+          if (result.job) {
+            this.emit(minerId + ":job", result.job);
           }
           break;
         }
         case "submit": {
-          if (data.result && data.result.status === "OK") {
+          if (response.result && response.result.status === "OK") {
             this.emit(minerId + ":accepted");
           }
           break;
         }
         default: {
-          if (data.error && data.error.code === -1) {
-            this.emit(minerId + ":error", data);
+          if (response.error && response.error.code === -1) {
+            this.emit(minerId + ":error", response);
           }
         }
       }
     } else {
-      // it's not a reply
-      switch (data.method) {
+      // it's a request
+      const request = data as StratumRequest;
+      switch (request.method) {
         case "job": {
-          const minerId = this.minerId[data.params.id];
+          const jobParams = request.params as StratumJob;
+          const minerId = this.minerId[jobParams.id];
           if (!minerId) {
-            console.warn(`dropping job for a miner that is not online anymore`, message);
+            // miner is not online anymore
             return;
           }
-          this.emit(minerId + ":job", data.params);
+          this.emit(minerId + ":job", request.params);
           break;
         }
       }
     }
   }
 
-  send(id, method, params = {}) {
-    let message = {
+  send(id: string, method: string, params: StratumRequestParams = {}) {
+    let message: StratumRequest = {
       id: this.rpcId++,
       method,
       params
     };
-    if (this.auth[id]) {
-      message.params.id = this.auth[id];
-    } else {
-      if (method !== "login") {
-        console.error("invalid id", id, this.auth);
+
+    switch (method) {
+      case "login": {
+        // ..
+        break;
+      }
+      case "keepalived": {
+        if (this.auth[id]) {
+          const keepAliveParams = message.params as StratumKeepAlive;
+          keepAliveParams.id = this.auth[id];
+        } else {
+          console.error(`unauthenticated keepalive (${id})`);
+          return;
+        }
+      }
+      case "submit": {
+        if (this.auth[id]) {
+          const submitParams = message.params as StratumJob;
+          submitParams.id = this.auth[id];
+        } else {
+          console.error(`unauthenticated job submission (${id})`);
+          return;
+        }
       }
     }
+
     this.rpc[message.id] = {
       minerId: id,
       message
     };
+
     this.queue.push({
       type: "message",
-      payload: JSON.stringify(message)
+      payload: message
     });
   }
 
-  add(miner) {
+  add(miner: Miner): void {
     if (this.miners.indexOf(miner) === -1) {
       this.miners.push(miner);
     }
   }
 
-  remove(minerId) {
+  remove(minerId: string): void {
     const miner = this.miners.find(x => x.id !== minerId);
     if (miner) {
       this.miners = this.miners.filter(x => x.id !== minerId);
@@ -193,7 +237,7 @@ class Connection extends EventEmitter {
     }
   }
 
-  clear(minerId) {
+  clear(minerId: string): void {
     const auth = this.auth[minerId];
     delete this.auth[minerId];
     delete this.minerId[auth];
@@ -205,4 +249,4 @@ class Connection extends EventEmitter {
   }
 }
 
-module.exports = Connection;
+export default Connection;

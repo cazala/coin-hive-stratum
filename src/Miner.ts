@@ -1,12 +1,46 @@
-const uuid = require("uuid");
+import * as EventEmitter from "events";
+import * as WebSocket from "ws";
+import * as uuid from "uuid";
+import Connection from "./Connection";
+import Donation from "./Donation";
+import Queue from "./Queue";
+import {
+  Job,
+  CoinHiveError,
+  CoinHiveResponse,
+  CoinHiveLoginParams,
+  CoinHiveRequest,
+  StratumRequest,
+  StratumRequestParams
+} from "src/types";
 
-class Miner {
-  constructor(options) {
+export type Options = {
+  connection: Connection | null;
+  ws: WebSocket | null;
+  address: string | null;
+  user: string | null;
+  diff: number | null;
+  pass: string | null;
+  donations: Donation[] | null;
+};
+
+class Miner extends EventEmitter {
+  id: string = uuid.v4();
+  address: string = null;
+  user: string = null;
+  diff: number = null;
+  pass: string = null;
+  donations: Donation[] = null;
+  heartbeat: NodeJS.Timer = null;
+  connection: Connection = null;
+  queue: Queue = new Queue();
+  ws: WebSocket = null;
+  online: boolean = false;
+  jobs: Job[] = [];
+  hashes: number = 0;
+
+  constructor(options: Options) {
     super();
-    this.id = uuid.v4();
-    this.online = false;
-    this.jobs = [];
-    this.hashes = 0;
     this.connection = options.connection;
     this.ws = options.ws;
     this.address = options.address;
@@ -14,10 +48,9 @@ class Miner {
     this.diff = options.diff;
     this.pass = options.pass;
     this.donations = options.donations;
-    this.heartbeat = null;
   }
 
-  connect() {
+  async connect() {
     this.donations.forEach(donation => donation.connect());
     this.ws.on("message", this.handleMessage.bind(this));
     this.ws.on("close", () => this.kill());
@@ -27,12 +60,18 @@ class Miner {
     this.connection.on(this.id + ":job", this.handleJob.bind(this));
     this.connection.on(this.id + ":accepted", this.handleAccepted.bind(this));
     this.connection.on(this.id + ":error", this.handleError.bind(this));
+    this.queue.on("message", (message: StratumRequest) =>
+      this.connection.send(this.id, message.method, message.params)
+    );
     this.heartbeat = setInterval(() => this.connection.send(this.id, "keepalived"), 30000);
     this.online = true;
+    await Promise.all(this.donations.map(donation => donation.ready));
+    this.queue.start();
     console.log(`miner connected (${this.id})`);
   }
 
   kill() {
+    this.queue.stop();
     this.connection.remove(this.id);
     this.connection.removeAllListeners(this.id + ":authed");
     this.connection.removeAllListeners(this.id + ":job");
@@ -51,22 +90,31 @@ class Miner {
     console.log(`miner disconnected (${this.id})`);
   }
 
-  send(payload) {
+  sendToMiner(payload: CoinHiveResponse) {
     const coinhiveMessage = JSON.stringify(payload);
     if (this.online) {
       try {
         this.ws.send(coinhiveMessage);
-        console.log(`message sent to miner (${this.id}):`, coinhiveMessage);
       } catch (e) {
-        console.warn("websocket seems to be already closed", e.message);
+        console.warn("failed to send message to miner, websocket seems to be already closed", e.message);
         this.kill();
       }
     }
   }
 
-  handleAuthed(auth) {
+  sendToPool(method: string, params: StratumRequestParams) {
+    this.queue.push({
+      type: "message",
+      payload: {
+        method,
+        params
+      }
+    });
+  }
+
+  handleAuthed(auth: string): void {
     console.log(`miner authenticated (${this.id}):`, auth);
-    this.send({
+    this.sendToMiner({
       type: "authed",
       params: {
         token: "",
@@ -75,19 +123,19 @@ class Miner {
     });
   }
 
-  handleJob(job) {
-    console.log(`new job arrived (${this.id}):`, job);
+  handleJob(job: Job): void {
+    console.log(`job arrived (${this.id}):`, job.job_id);
     this.jobs.push(job);
-    this.send({
+    this.sendToMiner({
       type: "job",
       params: this.getJob()
     });
   }
 
-  handleAccepted() {
+  handleAccepted(): void {
     this.hashes++;
     console.log(`shares accepted (${this.id}):`, this.hashes);
-    this.send({
+    this.sendToMiner({
       type: "hash_accepted",
       params: {
         hashes: this.hashes
@@ -95,16 +143,16 @@ class Miner {
     });
   }
 
-  handleError(error) {
+  handleError(error: CoinHiveError): void {
     console.warn(`an error occurred (${this.id}):`, error);
-    this.send({
+    this.sendToMiner({
       type: "error",
       params: error
     });
   }
 
-  handleMessage(message) {
-    let data;
+  handleMessage(message: string) {
+    let data: CoinHiveRequest;
     try {
       data = JSON.parse(message);
     } catch (e) {
@@ -113,15 +161,16 @@ class Miner {
     }
     switch (data.type) {
       case "auth": {
-        let login = this.address || data.params.site_key;
-        const user = this.user || data.params.user;
+        const params = data.params as CoinHiveLoginParams;
+        let login = this.address || params.site_key;
+        const user = this.user || params.user;
         if (user) {
           login += "." + user;
         }
         if (this.diff) {
           login += "+" + this.diff;
         }
-        this.connection.send(this.id, "login", {
+        this.sendToPool("login", {
           login: login,
           pass: this.pass
         });
@@ -129,14 +178,14 @@ class Miner {
       }
 
       case "submit": {
-        const job = data.params;
+        const job = data.params as Job;
+        console.log(`job submitted (${this.id}):`, job.job_id);
         if (!this.isDonation(job)) {
-          console.log(`job submitted (${this.id}):`, job);
-          this.connection.send(this.id, "submit", job);
+          this.sendToPool("submit", job);
         } else {
           const donation = this.getDonation(job);
           donation.submit(job);
-          this.send({
+          this.sendToMiner({
             type: "hash_accepted",
             params: {
               hashes: ++this.hashes
@@ -148,18 +197,18 @@ class Miner {
     }
   }
 
-  getJob() {
+  getJob(): Job {
     const donation = this.donations.filter(donation => donation.shouldDonateJob()).pop();
     return donation ? donation.getJob() : this.jobs.pop();
   }
 
-  isDonation(job) {
+  isDonation(job: Job): boolean {
     return this.donations.some(donation => donation.hasJob(job));
   }
 
-  getDonation(job) {
+  getDonation(job: Job): Donation {
     return this.donations.find(donation => donation.hasJob(job));
   }
 }
 
-module.exports = Miner;
+export default Miner;
