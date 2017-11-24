@@ -53,6 +53,12 @@ class Donation {
     this.connection.on(this.id + ":job", this.handleJob.bind(this));
     this.heartbeat = setInterval(() => this.connection.send(this.id, "keepalived"), 30000);
     this.online = true;
+    setTimeout(() => {
+      if (!this.resolved) {
+        this.resolved = true;
+        this.resolver();
+      }
+    }, 5000);
   }
 
   kill(): void {
