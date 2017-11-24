@@ -143,6 +143,7 @@ const proxy = createProxy({
 
 
 // Create an HTTPS server
+const fs = require("fs");
 const server = require("https").createServer({
   key: fs.readFileSync("./server.key"),
   cert: fs.readFileSync("./server.crt")
