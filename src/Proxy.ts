@@ -58,12 +58,6 @@ class Proxy {
     }
     this.wss = new WebSocket.Server(wssOptions);
     console.log(`websocket server created`);
-    if (wssOptions.port) {
-      console.log(`listening on port`, wssOptions.port);
-    }
-    if (wssOptions.server) {
-      console.log(`using custom server`);
-    }
     if (!this.dynamicPool) {
       console.log(`host: ${this.host}`);
       console.log(`port: ${this.port}`);
