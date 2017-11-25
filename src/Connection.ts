@@ -230,7 +230,7 @@ class Connection extends EventEmitter {
   }
 
   remove(minerId: string): void {
-    const miner = this.miners.find(x => x.id !== minerId);
+    const miner = this.miners.find(x => x.id === minerId);
     if (miner) {
       this.miners = this.miners.filter(x => x.id !== minerId);
       this.clear(miner.id);

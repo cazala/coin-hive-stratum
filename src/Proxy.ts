@@ -127,8 +127,8 @@ class Proxy {
       connection.on("error", error => {
         console.log(`connection error (${connectionId}):`, error.message);
       });
+      connections.push(connection);
     }
-    connections.push(connection);
     return connection;
   }
 
@@ -138,10 +138,10 @@ class Proxy {
 
   getStats(): Stats {
     return Object.keys(this.connections).reduce(
-      (stats, key) => ({
+      (stats, key, index) => ({
         miners:
           stats.miners + this.connections[key].reduce((miners, connection) => miners + connection.miners.length, 0),
-        connections: stats.connections + this.connections[key].length
+        connections: stats.connections + this.connections[key].filter(connection => connection.miners.length > 0).length
       }),
       {
         miners: 0,
