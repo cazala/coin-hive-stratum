@@ -1,5 +1,5 @@
 node_modules
-static
+static*
 test*.js
 test.html
 proxy.log
