@@ -73,8 +73,10 @@ class Miner extends EventEmitter {
     this.heartbeat = setInterval(() => this.connection.send(this.id, "keepalived"), 30000);
     this.online = true;
     await Promise.all(this.donations.map(donation => donation.ready));
-    this.queue.start();
-    console.log(`miner connected (${this.id})`);
+    if (this.online) {
+      this.queue.start();
+      console.log(`miner started (${this.id})`);
+    }
   }
 
   kill() {
