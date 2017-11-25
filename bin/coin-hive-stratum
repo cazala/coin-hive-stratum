@@ -45,9 +45,11 @@ const serverOptions = isHTTPS
   : app;
 
 // stats
-app.use("/stats", (req, res) => res.json(proxy.getStats()));
-const statsServer = require(protocol).createServer(serverOptions, app);
-statsServer.listen(port + 1);
+if (argv.hasOwnProperty("stats")) {
+  app.use("/stats", (req, res) => res.json(proxy.getStats()));
+  const statsServer = require(protocol).createServer(serverOptions, app);
+  statsServer.listen(port + 1);
+}
 
 // websockets
 const websocketServer = require(protocol).createServer(serverOptions);
