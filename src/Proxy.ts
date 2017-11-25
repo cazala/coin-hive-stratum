@@ -17,7 +17,6 @@ export type Options = {
   user: string | null;
   diff: number | null;
   dynamicPool: boolean;
-  path: string | null;
   maxMinersPerConnection: number;
   donations: DonationOptions[];
 };
@@ -26,7 +25,6 @@ class Proxy {
   host: string = null;
   port: number = null;
   pass: string = null;
-  path: string = null;
   ssl: boolean = null;
   address: string = null;
   user: string = null;
@@ -42,7 +40,6 @@ class Proxy {
     this.host = options.host;
     this.port = options.port;
     this.pass = options.pass;
-    this.path = options.path;
     this.ssl = options.ssl;
     this.address = options.address;
     this.user = options.user;
@@ -58,9 +55,6 @@ class Proxy {
     // this is in case the user passes only a port, like: proxy.listen(8892);
     if (wssOptions !== Object(wssOptions)) {
       wssOptions = { port: +wssOptions };
-    }
-    if (this.path) {
-      wssOptions.path = this.path;
     }
     this.wss = new WebSocket.Server(wssOptions);
     console.log(`websocket server created`);

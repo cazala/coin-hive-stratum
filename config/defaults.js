@@ -7,7 +7,6 @@ module.exports = {
   user: null,
   diff: null,
   dynamicPool: false,
-  path: null,
   maxMinersPerConnection: 100,
   donations: [
     {
