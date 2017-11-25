@@ -1,6 +1,6 @@
 {
   "name": "coin-hive-stratum",
-  "version": "1.4.9",
+  "version": "1.4.10",
   "description": "proxy to use CoinHive miner on any stratum pool",
   "main": "build",
   "scripts": {
