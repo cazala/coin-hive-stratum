@@ -106,6 +106,7 @@ class Proxy {
         port = Number(split[1]) || this.port;
         pass = split[2] || this.pass;
       }
+      const connection = this.getConnection(host, port);
       const donations = this.donations.map(
         donation =>
           new Donation({
@@ -117,7 +118,6 @@ class Proxy {
             connection: this.getConnection(donation.host, donation.port, true)
           })
       );
-      const connection = this.getConnection(host, port);
       const miner = new Miner({
         connection,
         ws,
@@ -176,7 +176,7 @@ class Proxy {
       (stats, key, index) => ({
         miners:
           stats.miners + this.connections[key].reduce((miners, connection) => miners + connection.miners.length, 0),
-        connections: stats.connections + this.connections[key].filter(connection => connection.miners.length > 0).length
+        connections: stats.connections + this.connections[key].filter(connection => !connection.donation).length
       }),
       {
         miners: 0,
