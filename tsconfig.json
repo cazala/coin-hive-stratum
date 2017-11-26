@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "outDir": "build",
+    "moduleResolution": "node",
+    "stripInternal": true,
+    "pretty": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "lib": ["es5", "es2017"],
+    "types": ["node"]
+  },
+  "exclude": ["node_modules", "test", "build"],
+  "include": ["src/**/*"]
+}

@@ -1,8 +1,14 @@
 {
   "name": "coin-hive-stratum",
-  "version": "1.4.10",
+  "version": "2.0.0",
   "description": "proxy to use CoinHive miner on any stratum pool",
-  "main": "src/proxy.js",
+  "main": "build",
+  "scripts": {
+    "start": "`npm bin`/watch 'npm run build' src",
+    "clear:build": "rm -rf ./build && mkdir build",
+    "build:js": "`npm bin`/tsc -p tsconfig.json",
+    "build": "npm run clear:build && npm run build:js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cazala/coin-hive-stratum.git"
@@ -19,8 +25,14 @@
   },
   "homepage": "https://github.com/cazala/coin-hive-stratum#readme",
   "dependencies": {
+    "@types/node": "^8.0.53",
+    "@types/ws": "^3.2.0",
     "minimist": "^1.2.0",
     "moment": "^2.19.1",
+    "pmx": "^1.5.5",
+    "typescript": "^2.6.1",
+    "uuid": "^3.1.0",
+    "watch": "^1.0.2",
     "ws": "^3.2.0"
   },
   "bin": {

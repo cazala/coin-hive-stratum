@@ -1,14 +1,18 @@
-const EventEmitter = require("events");
-module.exports = class Queue extends EventEmitter {
-  constructor(ms = 100) {
+import * as EventEmitter from "events";
+import { QueueMessage } from "src/types";
+
+class Queue extends EventEmitter {
+  events: QueueMessage[] = [];
+  interval: NodeJS.Timer = null;
+  bypassed: boolean = false;
+  ms: number = 100;
+
+  constructor(ms: number = 100) {
     super();
-    this.events = [];
-    this.interval = null;
     this.ms = ms;
-    this.bypassed = false;
   }
 
-  start() {
+  start(): void {
     if (this.interval == null) {
       const that = this;
       this.interval = setInterval(() => {
@@ -22,23 +26,25 @@ module.exports = class Queue extends EventEmitter {
     }
   }
 
-  stop() {
+  stop(): void {
     if (this.interval != null) {
       clearInterval(this.interval);
       this.interval = null;
     }
   }
 
-  bypass() {
+  bypass(): void {
     this.bypassed = true;
     this.stop();
   }
 
-  push(event) {
+  push(event: QueueMessage): void {
     if (this.bypassed) {
       this.emit(event.type, event.payload);
     } else {
       this.events.push(event);
     }
   }
-};
+}
+
+export default Queue;

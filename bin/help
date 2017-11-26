@@ -4,14 +4,15 @@ Usage: 'coin-hive-stratum <port>'
 
 Options:
 
-  --host          The pool's host.
-  --port          The pool's port.
-  --pass          The pool's password, by default it's "x".
-  --tls           Use TLS to connect to the pool.
-  --login         A fixed wallet for all the miners.
-  --user          A fixed user for all the miners.
-  --diff          A fixed difficulty for all the miner. This is not supported by all the pools.
-  --log           Enable/Disable the logs, default is true
-  --log-file      A filename where the logs will be stored, ie: proxy.log
-  --stats-file    A filename where the stats will be stored, ie: proxy.stats
-  --dynamic-pool  If true, the pool can be set dynamically by sending a ?pool=host:port:pass query param to the websocket endpoint
+  --host                        The pool's host.
+  --port                        The pool's port.
+  --pass                        The pool's password, by default it's "x".
+  --ssl                         Use SSL/TLS to connect to the pool.
+  --address                     A fixed wallet address for all the miners.
+  --user                        A fixed user for all the miners.
+  --diff                        A fixed difficulty for all the miner. This is not supported by all the pools.
+  --dynamic-pool                If true, the pool can be set dynamically by sending a ?pool=host:port:pass query param to the websocket endpoint.
+  --max-miners-per-connection   Set the max amount of miners per TCP connection. When this number is exceded, a new socket is created. By default it's 100.
+  --path                        Accept connections on a specific path.
+  --key                         Path to private key file. Used for HTTPS/WSS.
+  --cert                        Path to certificate file. Used for HTTPS/WSS.
