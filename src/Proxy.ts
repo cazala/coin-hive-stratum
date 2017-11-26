@@ -1,5 +1,7 @@
 import * as WebSocket from "ws";
 import * as url from "url";
+import * as http from "http";
+import * as https from "https";
 import * as defaults from "../config/defaults";
 import Connection from "./Connection";
 import Miner from "./Miner";
@@ -19,6 +21,10 @@ export type Options = {
   dynamicPool: boolean;
   maxMinersPerConnection: number;
   donations: DonationOptions[];
+  key: Buffer;
+  cert: Buffer;
+  path: string;
+  server: http.Server | https.Server;
 };
 
 class Proxy {
@@ -34,6 +40,10 @@ class Proxy {
   donations: DonationOptions[] = [];
   connections: Dictionary<Connection[]> = {};
   wss: WebSocket.Server = null;
+  key: Buffer = null;
+  cert: Buffer = null;
+  path: string = null;
+  server: http.Server | https.Server = null;
 
   constructor(constructorOptions: Options = defaults) {
     let options = Object.assign({}, defaults, constructorOptions) as Options;
@@ -47,20 +57,44 @@ class Proxy {
     this.dynamicPool = options.dynamicPool;
     this.maxMinersPerConnection = options.maxMinersPerConnection;
     this.donations = options.donations;
+    this.key = options.key;
+    this.cert = options.cert;
+    this.path = options.path;
+    this.server = options.server;
   }
 
-  listen(wssOptions: WebSocket.ServerOptions): void {
-    // this is in case the user passes only a port, like: proxy.listen(8892);
-    if (wssOptions !== Object(wssOptions)) {
-      wssOptions = { port: +wssOptions };
+  listen(port: number): void {
+    // create server
+    const isHTTPS = !!(this.key && this.cert);
+    if (!this.server) {
+      const stats = (req, res) => {
+        const url = require("url").parse(req.url);
+        if (url.pathname === "/stats") {
+          const body = JSON.stringify(this.getStats(), null, 2);
+          res.writeHead(200, {
+            "Content-Length": Buffer.byteLength(body),
+            "Content-Type": "application/json"
+          });
+          res.end(body);
+        }
+      };
+      if (isHTTPS) {
+        const certificates = {
+          key: this.key,
+          cert: this.cert
+        };
+        this.server = https.createServer(certificates, stats);
+      } else {
+        this.server = http.createServer(stats);
+      }
+    }
+    const wssOptions: WebSocket.ServerOptions = {
+      server: this.server
+    };
+    if (this.path) {
+      wssOptions.path = this.path;
     }
     this.wss = new WebSocket.Server(wssOptions);
-    console.log(`websocket server created`);
-    if (!this.dynamicPool) {
-      console.log(`host: ${this.host}`);
-      console.log(`port: ${this.port}`);
-      console.log(`pass: ${this.pass}`);
-    }
     this.wss.on("connection", (ws: WebSocket, req: ServerRequest) => {
       const params = url.parse(req.url, true).query as WebSocketQuery;
       let host = this.host;
@@ -95,6 +129,16 @@ class Proxy {
       });
       miner.connect();
     });
+    this.server.listen(port);
+    console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
+    if (wssOptions.path) {
+      console.log(`path: ${wssOptions.path}`);
+    }
+    if (!this.dynamicPool) {
+      console.log(`host: ${this.host}`);
+      console.log(`port: ${this.port}`);
+      console.log(`pass: ${this.pass}`);
+    }
   }
 
   getConnection(host: string, port: number, donation: boolean = false): Connection {
@@ -149,6 +193,7 @@ class Proxy {
         connection.miners.forEach(miner => miner.kill());
       });
     });
+    this.wss.close();
   }
 }
 
