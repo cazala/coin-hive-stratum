@@ -1,6 +1,6 @@
 {
   "name": "coin-hive-stratum",
-  "version": "1.4.10",
+  "version": "2.0.0",
   "description": "proxy to use CoinHive miner on any stratum pool",
   "main": "build",
   "scripts": {
@@ -13,7 +13,11 @@
     "type": "git",
     "url": "git+https://github.com/cazala/coin-hive-stratum.git"
   },
-  "keywords": ["coinhive", "stratum", "proxy"],
+  "keywords": [
+    "coinhive",
+    "stratum",
+    "proxy"
+  ],
   "author": "",
   "license": "MIT",
   "bugs": {
