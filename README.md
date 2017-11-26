@@ -7,9 +7,11 @@ This proxy allows you to use CoinHive's JavaScript miner on a custom stratum poo
 This package was inspired by x25's
 [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
 
-**New**: Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock. [Learn More]()
+**New**: Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
+[Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages)
 
-**New 2**: Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.[Learn More]()
+**New 2**: Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
+[Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
 ## Installation
 
@@ -22,7 +24,7 @@ npm install -g coin-hive-stratum
 You just need to launch a proxy pointing to the desired pool:
 
 ```
-coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
+coin-hive-stratum 8892 --host=pool.supportxmr.com --port=3333
 ```
 
 And then just point your CoinHive miner to the proxy:
@@ -66,6 +68,10 @@ Options:
   --key                         Path to private key file. Used for HTTPS/WSS.
   --cert                        Path to certificate file. Used for HTTPS/WSS.
 ```
+
+## Stats
+
+You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie: `https://localhost:8892/stats`
 
 ## API
 
@@ -183,6 +189,26 @@ openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out serv
 ```
 
 You will need to add these certificates to your trusted certificates, otherwise the browser will complain.
+
+#### How can I store the logs?
+
+You have to run the proxy [using PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2) and pass a
+`--log=path/to/log.txt` argument when you start the proxy.
+
+#### How can I see the metrics?
+
+You can hit `/stats` to get some basic stats (number of miners and connections).
+
+To full metrics you have to run the proxy [using PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2).
+
+#### How can I avoid AdBlock?
+
+You can deploy the proxy to now.sh and GitHub Pages using
+[this guide](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages), or you can deploy the
+proxy to your own server and serve [these assets](https://github.com/cazala/coin-hive-stratum/tree/gh-pages) from your
+server.
+
+If you use those assets, the `CoinHive` global variable will be accessible as `CH`.
 
 ## Disclaimer
 
