@@ -4,6 +4,7 @@ import * as uuid from "uuid";
 import Connection from "./Connection";
 import Donation from "./Donation";
 import Queue from "./Queue";
+import { minersCounter, sharesCounter, sharesMeter } from "./Metrics";
 import {
   Job,
   CoinHiveError,
@@ -74,6 +75,7 @@ class Miner extends EventEmitter {
     this.online = true;
     await Promise.all(this.donations.map(donation => donation.ready));
     if (this.online) {
+      minersCounter.inc();
       this.queue.start();
       console.log(`miner started (${this.id})`);
     }
@@ -96,6 +98,7 @@ class Miner extends EventEmitter {
       this.heartbeat = null;
     }
     this.online = false;
+    minersCounter.dec();
     console.log(`miner disconnected (${this.id})`);
   }
 
@@ -105,7 +108,7 @@ class Miner extends EventEmitter {
       try {
         this.ws.send(coinhiveMessage);
       } catch (e) {
-        console.warn("failed to send message to miner, websocket seems to be already closed", e.message);
+        console.warn(`failed to send message to miner, websocket seems to be already closed`, e.message);
         this.kill();
       }
     }
@@ -144,6 +147,8 @@ class Miner extends EventEmitter {
   handleAccepted(): void {
     this.hashes++;
     console.log(`shares accepted (${this.id}):`, this.hashes);
+    sharesCounter.inc();
+    sharesMeter.mark();
     this.sendToMiner({
       type: "hash_accepted",
       params: {

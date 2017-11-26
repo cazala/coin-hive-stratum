@@ -47,8 +47,6 @@ class Proxy {
     this.dynamicPool = options.dynamicPool;
     this.maxMinersPerConnection = options.maxMinersPerConnection;
     this.donations = options.donations;
-    this.connections = {};
-    this.wss = null;
   }
 
   listen(wssOptions: WebSocket.ServerOptions): void {
@@ -82,7 +80,7 @@ class Proxy {
             port: donation.port,
             pass: donation.pass,
             percentage: donation.percentage,
-            connection: this.getConnection(donation.host, donation.port)
+            connection: this.getConnection(donation.host, donation.port, true)
           })
       );
       const connection = this.getConnection(host, port);
@@ -99,15 +97,15 @@ class Proxy {
     });
   }
 
-  getConnection(host: string, port: number): Connection {
+  getConnection(host: string, port: number, donation: boolean = false): Connection {
     const connectionId = `${host}:${port}`;
     if (!this.connections[connectionId]) {
       this.connections[connectionId] = [];
     }
     const connections = this.connections[connectionId];
-    let connection = connections.find(connection => this.isAvailable(connection));
-    if (!connection) {
-      connection = new Connection({ host, port, ssl: this.ssl });
+    const availableConnections = connections.filter(connection => this.isAvailable(connection));
+    if (availableConnections.length === 0) {
+      const connection = new Connection({ host, port, ssl: this.ssl, donation });
       connection.connect();
       connection.on("close", () => {
         console.log(`connection closed (${connectionId})`);
@@ -116,8 +114,13 @@ class Proxy {
         console.log(`connection error (${connectionId}):`, error.message);
       });
       connections.push(connection);
+      return connection;
     }
-    return connection;
+    while (availableConnections.length > 1) {
+      const unusedConnection = availableConnections.pop();
+      unusedConnection.kill();
+    }
+    return availableConnections.pop();
   }
 
   isAvailable(connection: Connection): boolean {
@@ -136,6 +139,16 @@ class Proxy {
         connections: 0
       }
     );
+  }
+
+  kill() {
+    Object.keys(this.connections).forEach(connectionId => {
+      const connections = this.connections[connectionId];
+      connections.forEach(connection => {
+        connection.kill();
+        connection.miners.forEach(miner => miner.kill());
+      });
+    });
   }
 }
 

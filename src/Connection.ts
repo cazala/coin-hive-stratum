@@ -4,6 +4,7 @@ import * as tls from "tls";
 import * as uuid from "uuid";
 import Miner from "./Miner";
 import Queue from "./Queue";
+import { connectionsCounter } from "./Metrics";
 import {
   Dictionary,
   Socket,
@@ -20,6 +21,7 @@ export type Options = {
   host: string;
   port: number;
   ssl: boolean;
+  donation: boolean;
 };
 
 class Connection extends EventEmitter {
@@ -36,12 +38,14 @@ class Connection extends EventEmitter {
   auth: Dictionary<string> = {};
   minerId: Dictionary<string> = {};
   miners: Miner[] = [];
+  donation: boolean;
 
   constructor(options: Options) {
     super();
     this.host = options.host;
     this.port = options.port;
     this.ssl = options.ssl;
+    this.donation = options.donation;
   }
 
   connect() {
@@ -61,12 +65,15 @@ class Connection extends EventEmitter {
       this.connect();
     });
     this.socket.on("close", () => {
-      console.warn(`socket closed (${this.host}:${this.port})`);
+      console.log(`socket closed (${this.host}:${this.port})`);
       this.emit("close");
     });
     this.socket.setKeepAlive(true);
     this.socket.setEncoding("utf8");
     this.online = true;
+    if (!this.donation) {
+      connectionsCounter.inc();
+    }
   }
 
   kill() {
@@ -82,6 +89,9 @@ class Connection extends EventEmitter {
       this.queue.stop();
     }
     this.online = false;
+    if (!this.donation) {
+      connectionsCounter.dec();
+    }
   }
 
   ready() {

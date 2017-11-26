@@ -14,7 +14,11 @@
     "type": "git",
     "url": "git+https://github.com/cazala/coin-hive-stratum.git"
   },
-  "keywords": ["coinhive", "stratum", "proxy"],
+  "keywords": [
+    "coinhive",
+    "stratum",
+    "proxy"
+  ],
   "author": "",
   "license": "MIT",
   "bugs": {
@@ -27,6 +31,7 @@
     "express": "^4.16.2",
     "minimist": "^1.2.0",
     "moment": "^2.19.1",
+    "pmx": "^1.5.5",
     "typescript": "^2.6.1",
     "uuid": "^3.1.0",
     "watch": "^1.0.2",
