@@ -53,6 +53,7 @@ class Miner extends EventEmitter {
 
   async connect() {
     console.log(`miner connected (${this.id})`);
+    minersCounter.inc();
     this.donations.forEach(donation => donation.connect());
     this.ws.on("message", this.handleMessage.bind(this));
     this.ws.on("close", () => {
@@ -75,7 +76,6 @@ class Miner extends EventEmitter {
     this.online = true;
     await Promise.all(this.donations.map(donation => donation.ready));
     if (this.online) {
-      minersCounter.inc();
       this.queue.start();
       console.log(`miner started (${this.id})`);
     }
