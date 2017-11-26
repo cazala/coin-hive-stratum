@@ -28,7 +28,6 @@
   "dependencies": {
     "@types/node": "^8.0.53",
     "@types/ws": "^3.2.0",
-    "express": "^4.16.2",
     "minimist": "^1.2.0",
     "moment": "^2.19.1",
     "pmx": "^1.5.5",
