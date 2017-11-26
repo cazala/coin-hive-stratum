@@ -1,7 +1,15 @@
-CoinHive Stratum Proxy
-----------------------
+## CoinHive Stratum Proxy
 
-This proxy allows you to use CoinHive's JavaScript miner on a custom stratum pool. This package was inspired by x25's [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
+<img width="1356" alt="pm2" src="https://user-images.githubusercontent.com/2781777/33243231-c162d55c-d2c0-11e7-9408-c3fb7fb699d0.png">
+
+This proxy allows you to use CoinHive's JavaScript miner on a custom stratum pool.
+
+This package was inspired by x25's
+[coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
+
+**New**: Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock. [Learn More]()
+
+**New 2**: Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.[Learn More]()
 
 ## Installation
 
@@ -32,8 +40,9 @@ And then just point your CoinHive miner to the proxy:
 </script>
 ```
 
-Now your CoinHive miner would be mining on `supportXMR.com` pool, using your monero address. This will work for any pool based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up [your own](https://github.com/zone117x/node-stratum-pool).
-
+Now your CoinHive miner would be mining on `supportXMR.com` pool, using your monero address. This will work for any pool
+based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up
+[your own](https://github.com/zone117x/node-stratum-pool).
 
 ## CLI
 
@@ -44,47 +53,53 @@ Usage: 'coin-hive-stratum <port>'
 
 Options:
 
-  --host          The pool's host.
-  --port          The pool's port.
-  --pass          The pool's password, by default it's "x".
-  --tls           Use TLS to connect to the pool.
-  --login         A fixed wallet for all the miners.
-  --user          A fixed user for all the miners.
-  --diff          A fixed difficulty for all the miner. This is not supported by all the pools.
-  --log           Enable/Disable the logs, default is true
-  --log-file      A filename where the logs will be stored, ie: proxy.log
-  --stats-file    A filename where the stats will be stored, ie: proxy.stats
-  --dynamic-pool  If true, the pool can be set dynamically by sending a ?pool=host:port:pass query param to the websocket endpoint
+  --host                        The pool's host.
+  --port                        The pool's port.
+  --pass                        The pool's password, by default it's "x".
+  --ssl                         Use SSL/TLS to connect to the pool.
+  --address                     A fixed wallet address for all the miners.
+  --user                        A fixed user for all the miners.
+  --diff                        A fixed difficulty for all the miner. This is not supported by all the pools.
+  --dynamic-pool                If true, the pool can be set dynamically by sending a ?pool=host:port:pass query param to the websocket endpoint.
+  --max-miners-per-connection   Set the max amount of miners per TCP connection. When this number is exceded, a new socket is created. By default it's 100.
+  --path                        Accept connections on a specific path.
+  --key                         Path to private key file. Used for HTTPS/WSS.
+  --cert                        Path to certificate file. Used for HTTPS/WSS.
 ```
 
 ## API
 
-- `createProxy`: Creates a `proxy` server. It may take an `options` object with the following optional properties:
+* `createProxy`: Creates a `proxy` server. It may take an `options` object with the following optional properties:
 
-  - `host`: the pool's host.
+  * `host`: the pool's host.
 
-  - `port`: the pool's port.
+  * `port`: the pool's port.
 
-  - `pass`: the pool's password, default is `"x"`.
+  * `pass`: the pool's password, default is `"x"`.
 
-  - `tls`: use TLS to connect to the pool.
+  * `ssl`: use SSL/TLS to connect to the pool.
 
-  - `login`: a fixed wallet for all the miners.
-  
-  - `user`: a fixed user for all the miners.
+  * `address`: a fixed wallet address for all the miners.
 
-  - `diff`: a fixed difficulty for all the miners.
+  * `user`: a fixed user for all the miners.
 
-  - `log`: enable/disable the logs, default is `true`.
+  * `diff`: a fixed difficulty for all the miners.
 
-  - `logFile`: a filename where the logs will be stored, ie: `"proxy.log"`.
+  * `dynamicPool`: if true, the pool can be set dynamically by sending a `?pool=host:port:pass` query param to the
+    websocket endpoint.
 
-  - `statsFile`: a filename where the stats will be stored, ie: `"proxy.stats"`
+  * `maxMinersPerConnection`: max amount of miners per TCP connection, when this number is exceded, a new socket is
+    created. Default it's `100`.
 
-  - `dynamicPool`: if true, the pool can be set dynamically by sending a `?pool=host:port:pass` query param to the websocket endpoint.
+  * `path`: accept connections on a specific path (ie: '/proxy').
 
-- `proxy.listen(port|wssOptions)`: launches the server listening on the specified port, which by default is `8892`. You can also provide the options for the `WebSocketServer`, this is useful for setting up SSL.
+  * `server`: use a custom http/https server.
 
+  * `key`: path to private key file (used for https/wss).
+
+  * `cert`: path to certificate file (used for https/wss).
+
+* `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
 
 ## FAQ
 
@@ -93,10 +108,10 @@ Options:
 Yes, like this:
 
 ```js
-const createProxy = require('coin-hive-stratum');
+const createProxy = require("coin-hive-stratum");
 const proxy = createProxy({
-  host: 'la01.supportxmr.com',
-  port: 3333,
+  host: "la01.supportxmr.com",
+  port: 3333
 });
 proxy.listen(8892);
 ```
@@ -120,13 +135,28 @@ Yes, just create a `CoinHive.User` and the username will be used as the stratum 
 
 #### Can I run this on Docker?
 
-Yes, just like this:
+Yes, use a `Dockerfile` like this:
 
 ```
-$ git clone https://github.com/cazala/coin-hive-stratum.git
-$ cd coin-hive-stratum
+FROM node:8-slim
+
+# Install coin-hive-stratum
+RUN npm i -g coin-hive-stratum --unsafe-perm=true --allow-root
+
+# Run coin-hive-stratum
+ENTRYPOINT ["coin-hive-stratum"]
+```
+
+Now build the image:
+
+```
 $ docker build -t coin-hive-stratum .
-$ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=la01.supportxmr.com --port=3333
+```
+
+And run the image:
+
+```
+$ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=pool.supportxmr.com --port=3333
 ```
 
 #### How can I make my proxy work with wss://?
@@ -134,27 +164,17 @@ $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=la01.supportxmr.
 You will need to create an HTTPS server and pass it to your proxy, like this:
 
 ```js
-// Create your proxy
-const createProxy = require("coin-hive-stratum");
-const proxy = createProxy({
+const Proxy = require("coin-hive-stratum");
+const proxy = new Proxy({
   host: "la01.supportxmr.com",
-  port: 3333
-});
-
-
-// Create an HTTPS server
-const fs = require("fs");
-const server = require("https").createServer({
+  port: 3333,
   key: fs.readFileSync("./server.key"),
   cert: fs.readFileSync("./server.crt")
 });
-server.listen(8892);
-
-// Pass your HTTPS server to the proxy
-proxy.listen({
-  server: server
-});
+proxy.listen(8892);
 ```
+
+Now you can connect to your proxy using `wss://` and see the `/stats` though `https://`.
 
 You can generate self-signed certificates to test this by using this command:
 
@@ -170,7 +190,8 @@ This project is not endorsed by or affiliated with `coinhive.com` in any way.
 
 ## Support
 
-This project is configured with a 1% donation. If you wish to disable it, please consider doing a one time donation and buy me a beer with [magic internet money](https://i.imgur.com/mScSiOo.jpg):
+This project is configured with a 1% donation. If you wish to disable it, please consider doing a one time donation and
+buy me a beer with [magic internet money](https://i.imgur.com/mScSiOo.jpg):
 
 ```
 BTC: 16ePagGBbHfm2d6esjMXcUBTNgqpnLWNeK
