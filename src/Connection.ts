@@ -109,7 +109,9 @@ class Connection extends EventEmitter {
     this.queue.on("message", (message: StratumRequest) => {
       if (!this.socket.writable) {
         console.warn(
-          `couldn't send message to pool (${this.host}:${this.port}) because socket is not writable: ${message}`
+          `couldn't send message to pool (${this.host}:${this.port}) because socket is not writable: ${JSON.stringify(
+            message
+          )}`
         );
         return false;
       }
