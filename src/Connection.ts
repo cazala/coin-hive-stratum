@@ -211,8 +211,7 @@ class Connection extends EventEmitter {
           const keepAliveParams = message.params as StratumKeepAlive;
           keepAliveParams.id = this.auth[id];
         } else {
-          console.error(`unauthenticated keepalive (${id})`);
-          return;
+          return false;
         }
       }
       case "submit": {
@@ -220,8 +219,7 @@ class Connection extends EventEmitter {
           const submitParams = message.params as StratumJob;
           submitParams.id = this.auth[id];
         } else {
-          console.error(`unauthenticated job submission (${id})`);
-          return;
+          return false;
         }
       }
     }
