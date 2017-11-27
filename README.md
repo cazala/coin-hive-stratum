@@ -46,6 +46,12 @@ Now your CoinHive miner would be mining on `supportXMR.com` pool, using your mon
 based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining_protocol). You can even set up
 [your own](https://github.com/zone117x/node-stratum-pool).
 
+## Stats
+
+You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie: `https://localhost:8892/stats`.
+
+To get more advanced metrcis you will have to [run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
+
 ## CLI
 
 ```
@@ -68,10 +74,6 @@ Options:
   --key                         Path to private key file. Used for HTTPS/WSS.
   --cert                        Path to certificate file. Used for HTTPS/WSS.
 ```
-
-## Stats
-
-You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie: `https://localhost:8892/stats`
 
 ## API
 
