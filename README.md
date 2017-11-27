@@ -7,10 +7,12 @@ This proxy allows you to use CoinHive's JavaScript miner on a custom stratum poo
 This package was inspired by x25's
 [coinhive-stratum-mining-proxy](https://github.com/x25/coinhive-stratum-mining-proxy).
 
-**New**: Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
+## Guides
+
+- Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
 [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages)
 
-**New 2**: Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
+- Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
 [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
 ## Installation
@@ -50,7 +52,7 @@ based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining
 
 You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie: `https://localhost:8892/stats`.
 
-To get more advanced metrcis you will have to [run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
+To get more advanced metrcis you will have to [run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2).
 
 ## CLI
 
