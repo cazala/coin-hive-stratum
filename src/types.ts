@@ -73,6 +73,7 @@ export type StratumRequest = {
   id: number;
   method: string;
   params: StratumRequestParams;
+  retry?: number;
 };
 
 export type StratumRequestParams = StratumLoginParams | StratumJob | StratumKeepAlive | StratumEmptyParams;

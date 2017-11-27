@@ -109,18 +109,31 @@ class Connection extends EventEmitter {
     });
     // message from miner
     this.queue.on("message", (message: StratumRequest) => {
+      if (!this.online) {
+        return false;
+      }
       if (!this.socket.writable) {
-        console.warn(
-          `couldn't send message to pool (${this.host}:${this.port}) because socket is not writable: ${JSON.stringify(
-            message
-          )}`
-        );
+        if (message.method === "keepalived") {
+          return false;
+        }
+        const retry = message.retry ? message.retry * 2 : 1;
+        const ms = retry * 100;
+        message.retry = retry;
+        setTimeout(() => {
+          this.queue.push({
+            type: "message",
+            payload: message
+          });
+        }, ms);
         return false;
       }
       try {
+        if (message.retry) {
+          delete message.retry;
+        }
         this.socket.write(JSON.stringify(message) + "\n");
       } catch (e) {
-        console.warn(`failed to send message to pool (${this.host}:${this.port}): ${message}`);
+        console.warn(`failed to send message to pool (${this.host}:${this.port}): ${JSON.stringify(message)}`);
       }
     });
     // kick it
