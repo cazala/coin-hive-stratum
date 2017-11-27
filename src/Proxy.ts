@@ -208,11 +208,11 @@ class Proxy {
   }
 
   purge() {
-    console.log("purging...");
     Object.keys(this.connections).forEach(connectionId => {
       const connections = this.connections[connectionId];
       const availableConnection = connections.filter(connection => this.isAvailable(connection));
-      availableConnection.forEach(unusedConnection => {
+      const unusedConnections = availableConnection.slice(1);
+      unusedConnections.forEach(unusedConnection => {
         console.log("purge", unusedConnection.id);
         this.connections[connectionId] = this.connections[connectionId].filter(
           connection => connection.id !== unusedConnection.id
