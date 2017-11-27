@@ -2,6 +2,7 @@ import * as EventEmitter from "events";
 import * as net from "net";
 import * as tls from "tls";
 import * as uuid from "uuid";
+import Donation from "./Donation";
 import Miner from "./Miner";
 import Queue from "./Queue";
 import { connectionsCounter } from "./Metrics";
@@ -38,6 +39,7 @@ class Connection extends EventEmitter {
   auth: Dictionary<string> = {};
   minerId: Dictionary<string> = {};
   miners: Miner[] = [];
+  donations: Donation[] = [];
   donation: boolean;
 
   constructor(options: Options) {
@@ -235,13 +237,13 @@ class Connection extends EventEmitter {
     });
   }
 
-  add(miner: Miner): void {
+  addMiner(miner: Miner): void {
     if (this.miners.indexOf(miner) === -1) {
       this.miners.push(miner);
     }
   }
 
-  remove(minerId: string): void {
+  removeMiner(minerId: string): void {
     const miner = this.miners.find(x => x.id === minerId);
     if (miner) {
       this.miners = this.miners.filter(x => x.id !== minerId);
@@ -249,12 +251,26 @@ class Connection extends EventEmitter {
     }
   }
 
-  clear(minerId: string): void {
-    const auth = this.auth[minerId];
-    delete this.auth[minerId];
+  addDonation(donation: Donation): void {
+    if (this.donations.indexOf(donation) === -1) {
+      this.donations.push(donation);
+    }
+  }
+
+  removeDonation(donationId: string): void {
+    const donation = this.donations.find(x => x.id === donationId);
+    if (donation) {
+      this.donations = this.donations.filter(x => x.id !== donationId);
+      this.clear(donation.id);
+    }
+  }
+
+  clear(id: string): void {
+    const auth = this.auth[id];
+    delete this.auth[id];
     delete this.minerId[auth];
     Object.keys(this.rpc).forEach(key => {
-      if (this.rpc[key].minerId === minerId) {
+      if (this.rpc[key].minerId === id) {
         delete this.rpc[key];
       }
     });

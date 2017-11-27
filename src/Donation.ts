@@ -46,6 +46,7 @@ class Donation {
     if (this.user) {
       login += "." + this.user;
     }
+    this.connection.addDonation(this);
     this.connection.send(this.id, "login", {
       login: login,
       pass: this.pass
@@ -62,7 +63,7 @@ class Donation {
   }
 
   kill(): void {
-    this.connection.clear(this.id);
+    this.connection.removeDonation(this.id);
     this.connection.removeAllListeners(this.id + ":job");
     this.jobs = [];
     this.taken = [];

@@ -44,6 +44,7 @@ class Proxy {
   cert: Buffer = null;
   path: string = null;
   server: http.Server | https.Server = null;
+  purgeInterval: NodeJS.Timer = null;
 
   constructor(constructorOptions: Options = defaults) {
     let options = Object.assign({}, defaults, constructorOptions) as Options;
@@ -61,6 +62,7 @@ class Proxy {
     this.cert = options.cert;
     this.path = options.path;
     this.server = options.server;
+    this.purgeInterval = setInterval(() => this.purge(), 30 * 1000);
   }
 
   listen(port: number): void {
@@ -162,18 +164,24 @@ class Proxy {
     }
     while (availableConnections.length > 1) {
       const unusedConnection = availableConnections.pop();
+      this.connections[connectionId] = this.connections[connectionId].filter(
+        connection => connection.id !== unusedConnection.id
+      );
       unusedConnection.kill();
     }
     return availableConnections.pop();
   }
 
   isAvailable(connection: Connection): boolean {
-    return connection.online && connection.miners.length < this.maxMinersPerConnection;
+    return (
+      connection.miners.length < this.maxMinersPerConnection &&
+      connection.donations.length < this.maxMinersPerConnection
+    );
   }
 
   getStats(): Stats {
     return Object.keys(this.connections).reduce(
-      (stats, key, index) => ({
+      (stats, key) => ({
         miners:
           stats.miners + this.connections[key].reduce((miners, connection) => miners + connection.miners.length, 0),
         connections: stats.connections + this.connections[key].filter(connection => !connection.donation).length
@@ -186,6 +194,9 @@ class Proxy {
   }
 
   kill() {
+    if (this.purgeInterval) {
+      clearInterval(this.purgeInterval);
+    }
     Object.keys(this.connections).forEach(connectionId => {
       const connections = this.connections[connectionId];
       connections.forEach(connection => {
@@ -194,6 +205,21 @@ class Proxy {
       });
     });
     this.wss.close();
+  }
+
+  purge() {
+    console.log("purging...");
+    Object.keys(this.connections).forEach(connectionId => {
+      const connections = this.connections[connectionId];
+      const availableConnection = connections.filter(connection => this.isAvailable(connection));
+      availableConnection.forEach(unusedConnection => {
+        console.log("purge", unusedConnection.id);
+        this.connections[connectionId] = this.connections[connectionId].filter(
+          connection => connection.id !== unusedConnection.id
+        );
+        unusedConnection.kill();
+      });
+    });
   }
 }
 
