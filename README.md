@@ -167,7 +167,7 @@ $ docker run --rm -t -p 8892:8892 coin-hive-stratum 8892 --host=pool.supportxmr.
 
 #### How can I make my proxy work with wss://?
 
-You will need to create an HTTPS server and pass it to your proxy, like this:
+You will need to pass a private key file and a certificate file to your proxy:
 
 ```js
 const Proxy = require("coin-hive-stratum");
