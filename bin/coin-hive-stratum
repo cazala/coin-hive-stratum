@@ -31,7 +31,8 @@ const options = {
   diff: argv.diff || defaults.diff,
   dynamicPool: argv.hasOwnProperty("dynamic-pool") || defaults.dynamicPool,
   maxMinersPerConnection: argv["max-miners-per-connection"] || defaults.maxMinersPerConnection,
-  path: argv.path || defaults.path
+  path: argv.path || defaults.path,
+  purgeInterval: argv["purge-interval"] || defaults.purgeInterval
 };
 
 if (isHTTPS) {

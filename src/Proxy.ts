@@ -25,6 +25,7 @@ export type Options = {
   cert: Buffer;
   path: string;
   server: http.Server | https.Server;
+  purgeInterval: number;
 };
 
 class Proxy {
@@ -62,7 +63,7 @@ class Proxy {
     this.cert = options.cert;
     this.path = options.path;
     this.server = options.server;
-    this.purgeInterval = setInterval(() => this.purge(), 30 * 1000);
+    this.purgeInterval = options.purgeInterval > 0 ? setInterval(() => this.purge(), options.purgeInterval) : null;
   }
 
   listen(port: number): void {
@@ -161,13 +162,6 @@ class Proxy {
       });
       connections.push(connection);
       return connection;
-    }
-    while (availableConnections.length > 1) {
-      const unusedConnection = availableConnections.pop();
-      this.connections[connectionId] = this.connections[connectionId].filter(
-        connection => connection.id !== unusedConnection.id
-      );
-      unusedConnection.kill();
     }
     return availableConnections.pop();
   }

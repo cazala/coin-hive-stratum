@@ -8,6 +8,7 @@ module.exports = {
   diff: null,
   dynamicPool: false,
   maxMinersPerConnection: 100,
+  purgeInterval: 30000,
   donations: [
     {
       address: "46WNbmwXpYxiBpkbHjAgjC65cyzAxtaaBQjcGpAZquhBKw2r8NtPQniEgMJcwFMCZzSBrEJtmPsTR54MoGBDbjTi2W1XmgM",
