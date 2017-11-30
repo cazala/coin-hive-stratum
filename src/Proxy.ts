@@ -173,6 +173,10 @@ class Proxy {
     );
   }
 
+  isEmpty(connection: Connection): boolean {
+    return connection.miners.length === 0 && connection.donations.length === 0;
+  }
+
   getStats(): Stats {
     return Object.keys(this.connections).reduce(
       (stats, key) => ({
@@ -204,7 +208,7 @@ class Proxy {
   purge() {
     Object.keys(this.connections).forEach(connectionId => {
       const connections = this.connections[connectionId];
-      const availableConnection = connections.filter(connection => this.isAvailable(connection));
+      const availableConnection = connections.filter(connection => this.isEmpty(connection));
       const unusedConnections = availableConnection.slice(1);
       unusedConnections.forEach(unusedConnection => {
         console.log(`purge (${connectionId}):`, unusedConnection.id);
