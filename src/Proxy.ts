@@ -66,7 +66,7 @@ class Proxy {
     this.purgeInterval = options.purgeInterval > 0 ? setInterval(() => this.purge(), options.purgeInterval) : null;
   }
 
-  listen(port: number): void {
+  listen(port: number, host?: string, callback?: () => void): void {
     // create server
     const isHTTPS = !!(this.key && this.cert);
     if (!this.server) {
@@ -132,7 +132,15 @@ class Proxy {
       });
       miner.connect();
     });
-    this.server.listen(port);
+    if (!host && !callback) {
+      this.server.listen(port);
+    } else if (!host && callback) {
+      this.server.listen(port, callback);
+    } else if (host && !callback) {
+      this.server.listen(port, host);
+    } else {
+      this.server.listen(port, host, callback);
+    }
     console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
     if (wssOptions.path) {
       console.log(`path: ${wssOptions.path}`);
