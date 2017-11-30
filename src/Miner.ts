@@ -163,6 +163,7 @@ class Miner extends EventEmitter {
       type: "error",
       params: error
     });
+    this.kill();
   }
 
   handleMessage(message: string) {
