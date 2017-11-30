@@ -118,8 +118,8 @@ Options:
 Yes, like this:
 
 ```js
-const createProxy = require("coin-hive-stratum");
-const proxy = createProxy({
+const Proxy = require("coin-hive-stratum");
+const proxy = new Proxy({
   host: "la01.supportxmr.com",
   port: 3333
 });
