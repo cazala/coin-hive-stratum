@@ -9,11 +9,11 @@ This package was inspired by x25's
 
 ## Guides
 
-- Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
-[Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages)
+* Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
+  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages)
 
-- Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
-[Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
+* Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
+  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
 ## Installation
 
@@ -50,9 +50,11 @@ based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining
 
 ## Stats
 
-You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie: `https://localhost:8892/stats`.
+You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie:
+`https://localhost:8892/stats`.
 
-To get more advanced metrcis you will have to [run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2).
+To get more advanced metrcis you will have to
+[run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2).
 
 ## CLI
 
@@ -109,7 +111,7 @@ Options:
 
   * `cert`: path to certificate file (used for https/wss).
 
-* `proxy.listen(port)`: launches the server listening on the specified port, which by default is `8892`.
+* `proxy.listen(port [, host])`: launches the server listening on the specified port (and optionally a host).
 
 ## FAQ
 
