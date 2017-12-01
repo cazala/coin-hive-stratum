@@ -108,7 +108,6 @@ class Miner extends EventEmitter {
       try {
         this.ws.send(coinhiveMessage);
       } catch (e) {
-        console.warn(`failed to send message to miner, websocket seems to be already closed`, e.message);
         this.kill();
       }
     }
