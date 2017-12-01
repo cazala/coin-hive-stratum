@@ -1,6 +1,6 @@
 import * as uuid from "uuid";
 import Connection from "./Connection";
-import { Job } from "src/types";
+import { Job, StratumError } from "src/types";
 
 export type Options = {
   address: string;
@@ -35,13 +35,16 @@ class Donation {
     this.pass = options.pass;
     this.percentage = options.percentage;
     this.connection = options.connection;
+  }
+
+  connect(): void {
+    if (this.online) {
+      this.kill();
+    }
     this.ready = new Promise(resolve => {
       this.resolved = false;
       this.resolver = resolve;
     });
-  }
-
-  connect(): void {
     let login = this.address;
     if (this.user) {
       login += "." + this.user;
@@ -52,6 +55,7 @@ class Donation {
       pass: this.pass
     });
     this.connection.on(this.id + ":job", this.handleJob.bind(this));
+    this.connection.on(this.id + ":error", this.handleError.bind(this));
     this.heartbeat = setInterval(() => this.connection.send(this.id, "keepalived"), 30000);
     this.online = true;
     setTimeout(() => {
@@ -65,6 +69,7 @@ class Donation {
   kill(): void {
     this.connection.removeDonation(this.id);
     this.connection.removeAllListeners(this.id + ":job");
+    this.connection.removeAllListeners(this.id + ":error");
     this.jobs = [];
     this.taken = [];
     if (this.heartbeat) {
@@ -101,6 +106,11 @@ class Donation {
 
   hasJob(job: Job): boolean {
     return this.taken.some(j => j.job_id === job.job_id);
+  }
+
+  handleError(error: StratumError) {
+    console.warn(`donation connection error (${this.id})`, JSON.stringify(error));
+    this.connect();
   }
 }
 
