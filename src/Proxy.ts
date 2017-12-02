@@ -25,7 +25,6 @@ export type Options = {
   cert: Buffer;
   path: string;
   server: http.Server | https.Server;
-  purgeInterval: number;
 };
 
 class Proxy {
@@ -45,7 +44,6 @@ class Proxy {
   cert: Buffer = null;
   path: string = null;
   server: http.Server | https.Server = null;
-  purgeInterval: NodeJS.Timer = null;
 
   constructor(constructorOptions: Options = defaults) {
     let options = Object.assign({}, defaults, constructorOptions) as Options;
@@ -63,7 +61,6 @@ class Proxy {
     this.cert = options.cert;
     this.path = options.path;
     this.server = options.server;
-    this.purgeInterval = options.purgeInterval > 0 ? setInterval(() => this.purge(), options.purgeInterval) : null;
   }
 
   listen(port: number, host?: string, callback?: () => void): void {
@@ -200,9 +197,6 @@ class Proxy {
   }
 
   kill() {
-    if (this.purgeInterval) {
-      clearInterval(this.purgeInterval);
-    }
     Object.keys(this.connections).forEach(connectionId => {
       const connections = this.connections[connectionId];
       connections.forEach(connection => {
@@ -211,21 +205,6 @@ class Proxy {
       });
     });
     this.wss.close();
-  }
-
-  purge() {
-    Object.keys(this.connections).forEach(connectionId => {
-      const connections = this.connections[connectionId];
-      const availableConnection = connections.filter(connection => this.isEmpty(connection));
-      const unusedConnections = availableConnection.slice(1);
-      unusedConnections.forEach(unusedConnection => {
-        console.log(`purge (${connectionId}):`, unusedConnection.id);
-        this.connections[connectionId] = this.connections[connectionId].filter(
-          connection => connection.id !== unusedConnection.id
-        );
-        unusedConnection.kill();
-      });
-    });
   }
 }
 
