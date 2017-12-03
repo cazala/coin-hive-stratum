@@ -9,7 +9,9 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "lib": ["es5", "es2017"],
-    "types": ["node"]
+    "types": ["node"],
+    "declaration": true,
+    "declarationDir": "build/typings"
   },
   "exclude": ["node_modules", "test", "build"],
   "include": ["src/**/*"]
