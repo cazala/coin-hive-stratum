@@ -1,3 +1,4 @@
+import * as EventEmitter from "events";
 import * as WebSocket from "ws";
 import * as url from "url";
 import * as http from "http";
@@ -6,8 +7,18 @@ import * as defaults from "../config/defaults";
 import Connection from "./Connection";
 import Miner from "./Miner";
 import Donation, { Options as DonationOptions } from "./Donation";
-import { Dictionary, Stats, WebSocketQuery } from "src/types";
-import { Request } from "_debugger";
+import {
+  Dictionary,
+  Stats,
+  WebSocketQuery,
+  ErrorEvent,
+  CloseEvent,
+  AcceptedEvent,
+  FoundEvent,
+  JobEvent,
+  AuthedEvent,
+  OpenEvent
+} from "src/types";
 import { ServerRequest } from "http";
 
 export type Options = {
@@ -27,7 +38,7 @@ export type Options = {
   server: http.Server | https.Server;
 };
 
-class Proxy {
+class Proxy extends EventEmitter {
   host: string = null;
   port: number = null;
   pass: string = null;
@@ -46,6 +57,7 @@ class Proxy {
   server: http.Server | https.Server = null;
 
   constructor(constructorOptions: Options = defaults) {
+    super();
     let options = Object.assign({}, defaults, constructorOptions) as Options;
     this.host = options.host;
     this.port = options.port;
@@ -61,6 +73,9 @@ class Proxy {
     this.cert = options.cert;
     this.path = options.path;
     this.server = options.server;
+    this.on("error", () => {
+      /* prevent unhandled error events from stopping the proxy */
+    });
   }
 
   listen(port: number, host?: string, callback?: () => void): void {
@@ -127,6 +142,13 @@ class Proxy {
         pass,
         donations
       });
+      miner.on("open", (data: OpenEvent) => this.emit("open", data));
+      miner.on("authed", (data: AuthedEvent) => this.emit("authed", data));
+      miner.on("job", (data: JobEvent) => this.emit("job", data));
+      miner.on("found", (data: FoundEvent) => this.emit("found", data));
+      miner.on("accepted", (data: AcceptedEvent) => this.emit("accepted", data));
+      miner.on("close", (data: CloseEvent) => this.emit("close", data));
+      miner.on("error", (data: ErrorEvent) => this.emit("error", data));
       miner.connect();
     });
     if (!host && !callback) {

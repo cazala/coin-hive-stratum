@@ -113,6 +113,23 @@ Options:
 
 * `proxy.listen(port [, host])`: launches the server listening on the specified port (and optionally a host).
 
+* `proxy.on(event, callback)`: specify a callback for an event, each event has information about the miner who triggered
+  it. The types are:
+
+  * `open`: a new connection was open from a miner (ie. the miner connected to the proxy).
+
+  * `authed`: a miner has been authenticated on the pool.
+
+  * `close`: a connection from a miner was closed (ie. the miner disconnected from the proxy).
+
+  * `error`: an error ocurred.
+
+  * `job`: a new mining job was received from the pool.
+
+  * `found`: a hash meeting the pool's difficulty was found and will be sent to the pool.
+
+  * `accepted`: a hash that was sent to the pool was accepted.
+
 ## FAQ
 
 #### Can I use this programmatically?

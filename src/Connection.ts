@@ -166,7 +166,6 @@ class Connection extends EventEmitter {
             this.emit(minerId + ":error", {
               error: "invalid_site_key"
             });
-            console.warn(`invalid site key (${minerId})`);
             return;
           }
           const result = response.result as StratumLoginResult;

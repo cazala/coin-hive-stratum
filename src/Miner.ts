@@ -29,6 +29,7 @@ export type Options = {
 
 class Miner extends EventEmitter {
   id: string = uuid.v4();
+  login: string = null;
   address: string = null;
   user: string = null;
   diff: number = null;
@@ -59,12 +60,16 @@ class Miner extends EventEmitter {
     this.donations.forEach(donation => donation.connect());
     this.ws.on("message", this.handleMessage.bind(this));
     this.ws.on("close", () => {
-      console.log(`miner connection closed (${this.id})`);
-      this.kill();
+      if (this.online) {
+        console.log(`miner connection closed (${this.id})`);
+        this.kill();
+      }
     });
     this.ws.on("error", error => {
-      console.log(`miner connection error (${this.id}):`, error);
-      this.kill();
+      if (this.online) {
+        console.log(`miner connection error (${this.id}):`, error.message);
+        this.kill();
+      }
     });
     this.connection.addMiner(this);
     this.connection.on(this.id + ":authed", this.handleAuthed.bind(this));
@@ -80,6 +85,9 @@ class Miner extends EventEmitter {
     if (this.online) {
       this.queue.start();
       console.log(`miner started (${this.id})`);
+      this.emit("open", {
+        id: this.id
+      });
     }
   }
 
@@ -103,7 +111,12 @@ class Miner extends EventEmitter {
       this.online = false;
       minersCounter.dec();
       console.log(`miner disconnected (${this.id})`);
+      this.emit("close", {
+        id: this.id,
+        login: this.login
+      });
     }
+    this.removeAllListeners();
   }
 
   sendToMiner(payload: CoinHiveResponse) {
@@ -136,6 +149,11 @@ class Miner extends EventEmitter {
         hashes: 0
       }
     });
+    this.emit("authed", {
+      id: this.id,
+      login: this.login,
+      auth
+    });
   }
 
   handleJob(job: Job): void {
@@ -154,6 +172,11 @@ class Miner extends EventEmitter {
         params: this.jobs.pop()
       });
     }
+    this.emit("job", {
+      id: this.id,
+      login: this.login,
+      job
+    });
   }
 
   handleAccepted(job: StratumJob): void {
@@ -167,13 +190,23 @@ class Miner extends EventEmitter {
         hashes: this.hashes
       }
     });
+    this.emit("accepted", {
+      id: this.id,
+      login: this.login,
+      hashes: this.hashes
+    });
   }
 
   handleError(error: StratumError): void {
-    console.warn(`pool connection error (${this.id}):`, error);
+    console.warn(`pool connection error (${this.id}):`, error.error);
     this.sendToMiner({
       type: "error",
       params: error
+    });
+    this.emit("error", {
+      id: this.id,
+      login: this.login,
+      error
     });
     this.kill();
   }
@@ -189,16 +222,16 @@ class Miner extends EventEmitter {
     switch (data.type) {
       case "auth": {
         const params = data.params as CoinHiveLoginParams;
-        let login = this.address || params.site_key;
+        this.login = this.address || params.site_key;
         const user = this.user || params.user;
         if (user) {
-          login += "." + user;
+          this.login += "." + user;
         }
         if (this.diff) {
-          login += "+" + this.diff;
+          this.login += "+" + this.diff;
         }
         this.sendToPool("login", {
-          login: login,
+          login: this.login,
           pass: this.pass
         });
         break;
@@ -219,6 +252,11 @@ class Miner extends EventEmitter {
             }
           });
         }
+        this.emit("found", {
+          id: this.id,
+          login: this.login,
+          job
+        });
         break;
       }
     }

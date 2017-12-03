@@ -119,3 +119,44 @@ export type StratumError = {
 export type StratumKeepAlive = {
   id: string;
 };
+
+// Events
+
+export type OpenEvent = {
+  id: string;
+};
+
+export type AuthedEvent = {
+  id: string;
+  login: string;
+  auth: string;
+};
+
+export type JobEvent = {
+  id: string;
+  login: string;
+  job: Job;
+};
+
+export type FoundEvent = {
+  id: string;
+  login: string;
+  job: Job;
+};
+
+export type AcceptedEvent = {
+  id: string;
+  login: string;
+  hashes: number;
+};
+
+export type CloseEvent = {
+  id: string;
+  login: string;
+};
+
+export type ErrorEvent = {
+  id: string;
+  login: string;
+  error: StratumError;
+};
