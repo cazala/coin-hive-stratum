@@ -122,7 +122,7 @@ Yes, like this:
 ```js
 const Proxy = require("coin-hive-stratum");
 const proxy = new Proxy({
-  host: "la01.supportxmr.com",
+  host: "pool.supportxmr.com",
   port: 3333
 });
 proxy.listen(8892);
@@ -178,7 +178,7 @@ You will need to pass a private key file and a certificate file to your proxy:
 ```js
 const Proxy = require("coin-hive-stratum");
 const proxy = new Proxy({
-  host: "la01.supportxmr.com",
+  host: "pool.supportxmr.com",
   port: 3333,
   key: fs.readFileSync("./server.key"),
   cert: fs.readFileSync("./server.crt")
