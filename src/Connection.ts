@@ -182,6 +182,8 @@ class Connection extends EventEmitter {
           const job = this.rpc[response.id].message.params as StratumJob;
           if (response.result && response.result.status === "OK") {
             this.emit(minerId + ":accepted", job);
+          } else if (response.error) {
+            this.emit(minerId + ":error", response.error);
           }
           break;
         }
