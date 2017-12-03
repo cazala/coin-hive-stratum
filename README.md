@@ -58,6 +58,8 @@ The proxy provides a few endpoints to see your stats:
 
 * `/connections`: list of connections, showing id, host, port and amount of miners for each one.
 
+Example: http://localhost:8892/stats
+
 If you want to protect these endpoints (recommended) use the `credentials: { user, pass }` option in the proxy
 constructor or the `--credentials=username:password` flag for the CLI.
 
