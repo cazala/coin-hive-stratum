@@ -11,6 +11,10 @@ export type Job = {
   id: string;
 };
 
+export type TakenJob = Job & {
+  done: boolean;
+};
+
 export type Stats = {
   miners: number;
   connections: number;

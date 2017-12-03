@@ -15,7 +15,8 @@ import {
   StratumJob,
   StratumLoginResult,
   RPCMessage,
-  StratumKeepAlive
+  StratumKeepAlive,
+  Job
 } from "./types";
 
 export type Options = {
@@ -157,7 +158,6 @@ class Connection extends EventEmitter {
       }
       const minerId = this.rpc[response.id].minerId;
       const method = this.rpc[response.id].message.method;
-      delete this.rpc[response.id];
       switch (method) {
         case "login": {
           if (response.error && response.error.code === -1) {
@@ -178,17 +178,19 @@ class Connection extends EventEmitter {
           break;
         }
         case "submit": {
+          const job = this.rpc[response.id].message.params as StratumJob;
           if (response.result && response.result.status === "OK") {
-            this.emit(minerId + ":accepted");
+            this.emit(minerId + ":accepted", job);
           }
           break;
         }
         default: {
           if (response.error && response.error.code === -1) {
-            this.emit(minerId + ":error", response);
+            this.emit(minerId + ":error", response.error);
           }
         }
       }
+      delete this.rpc[response.id];
     } else {
       // it's a request
       const request = data as StratumRequest;

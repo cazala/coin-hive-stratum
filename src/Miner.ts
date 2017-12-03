@@ -12,7 +12,9 @@ import {
   CoinHiveLoginParams,
   CoinHiveRequest,
   StratumRequest,
-  StratumRequestParams
+  StratumRequestParams,
+  StratumError,
+  StratumJob
 } from "src/types";
 
 export type Options = {
@@ -137,13 +139,22 @@ class Miner extends EventEmitter {
   handleJob(job: Job): void {
     console.log(`job arrived (${this.id}):`, job.job_id);
     this.jobs.push(job);
-    this.sendToMiner({
-      type: "job",
-      params: this.getJob()
+    const donations = this.donations.filter(donation => donation.shouldDonateJob());
+    donations.forEach(donation => {
+      this.sendToMiner({
+        type: "job",
+        params: donation.getJob()
+      });
     });
+    if (!this.hasPendingDonations() && donations.length === 0) {
+      this.sendToMiner({
+        type: "job",
+        params: this.jobs.pop()
+      });
+    }
   }
 
-  handleAccepted(): void {
+  handleAccepted(job: StratumJob): void {
     this.hashes++;
     console.log(`shares accepted (${this.id}):`, this.hashes);
     sharesCounter.inc();
@@ -156,7 +167,7 @@ class Miner extends EventEmitter {
     });
   }
 
-  handleError(error: CoinHiveError): void {
+  handleError(error: StratumError): void {
     console.warn(`pool connection error (${this.id}):`, error);
     this.sendToMiner({
       type: "error",
@@ -211,17 +222,16 @@ class Miner extends EventEmitter {
     }
   }
 
-  getJob(): Job {
-    const donation = this.donations.filter(donation => donation.shouldDonateJob()).pop();
-    return donation ? donation.getJob() : this.jobs.pop();
-  }
-
   isDonation(job: Job): boolean {
     return this.donations.some(donation => donation.hasJob(job));
   }
 
   getDonation(job: Job): Donation {
     return this.donations.find(donation => donation.hasJob(job));
+  }
+
+  hasPendingDonations(): boolean {
+    return this.donations.some(donation => donation.taken.filter(job => !job.done).length > 0);
   }
 }
 
