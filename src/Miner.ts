@@ -99,9 +99,11 @@ class Miner extends EventEmitter {
       clearInterval(this.heartbeat);
       this.heartbeat = null;
     }
-    this.online = false;
-    minersCounter.dec();
-    console.log(`miner disconnected (${this.id})`);
+    if (this.online) {
+      this.online = false;
+      minersCounter.dec();
+      console.log(`miner disconnected (${this.id})`);
+    }
   }
 
   sendToMiner(payload: CoinHiveResponse) {
