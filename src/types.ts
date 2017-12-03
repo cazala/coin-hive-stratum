@@ -16,8 +16,21 @@ export type TakenJob = Job & {
 };
 
 export type Stats = {
+  miners: MinerStats[];
+  connections: ConnectionStats[];
+};
+
+export type MinerStats = {
+  id: string;
+  login: string | null;
+  hashes: number;
+};
+
+export type ConnectionStats = {
+  id: string;
+  host: string;
+  port: string;
   miners: number;
-  connections: number;
 };
 
 export type WebSocketQuery = {
@@ -38,6 +51,8 @@ export type Socket = NodeJS.Socket & {
   destroy: () => void;
   setKeepAlive: (value: boolean) => void;
 };
+
+export type Credentials = { user: string; pass: string };
 
 // CoinHive
 

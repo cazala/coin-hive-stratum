@@ -50,8 +50,16 @@ based on the [Stratum Mining Protocol](https://en.bitcoin.it/wiki/Stratum_mining
 
 ## Stats
 
-You can see your proxy stats (number of miners and connections) by hittings `/stats`, ie:
-`https://localhost:8892/stats`.
+The proxy provides a few endpoints to see your stats:
+
+* `/stats`: shows the number of miners and connections
+
+* `/miners`: list of all miners, showing id, login and hashes for each one.
+
+* `/connections`: list of connections, showing id, host, port and amount of miners for each one.
+
+If you want to protect these endpoints (recommended) use the `credentials: { user, pass }` option in the proxy
+constructor or the `--credentials=username:password` flag for the CLI.
 
 To get more advanced metrcis you will have to
 [run the proxy with PM2](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2).
@@ -77,6 +85,7 @@ Options:
   --path                        Accept connections on a specific path.
   --key                         Path to private key file. Used for HTTPS/WSS.
   --cert                        Path to certificate file. Used for HTTPS/WSS.
+  --credentials                 Credentials to access the /stats, /miners and /connections endponts. (usage: --credentials=username:password)
 ```
 
 ## API
@@ -110,6 +119,14 @@ Options:
   * `key`: path to private key file (used for https/wss).
 
   * `cert`: path to certificate file (used for https/wss).
+
+  * `credentials`: specify credentials for the API endpoints (`/stats`, `/miners`, `/connections`). If credentials are
+    provided, you will need to use [Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) to
+    access the endpoints.
+
+    * `user`: a username for the API endpoints
+
+    * `pass`: a password for the API endpoints.
 
 * `proxy.listen(port [, host])`: launches the server listening on the specified port (and optionally a host).
 

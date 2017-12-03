@@ -34,6 +34,18 @@ const options = {
   path: argv.path || defaults.path
 };
 
+if (argv["credentials"]) {
+  try {
+    const split = argv["credentials"].split(":");
+    options.credentials = {
+      user: split[0],
+      pass: split[1]
+    };
+  } catch (e) {
+    console.warn(`invalid credentials: "${argv["credentials"]}", the should be like "user:pass"`);
+  }
+}
+
 if (isHTTPS) {
   options.key = fs.readFileSync(key);
   options.cert = fs.readFileSync(cert);

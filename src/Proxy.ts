@@ -17,7 +17,8 @@ import {
   FoundEvent,
   JobEvent,
   AuthedEvent,
-  OpenEvent
+  OpenEvent,
+  Credentials
 } from "src/types";
 import { ServerRequest } from "http";
 
@@ -36,6 +37,7 @@ export type Options = {
   cert: Buffer;
   path: string;
   server: http.Server | https.Server;
+  credentials: Credentials;
 };
 
 class Proxy extends EventEmitter {
@@ -55,8 +57,9 @@ class Proxy extends EventEmitter {
   cert: Buffer = null;
   path: string = null;
   server: http.Server | https.Server = null;
+  credentials: Credentials = null;
 
-  constructor(constructorOptions: Options = defaults) {
+  constructor(constructorOptions: Partial<Options> = defaults) {
     super();
     let options = Object.assign({}, defaults, constructorOptions) as Options;
     this.host = options.host;
@@ -73,6 +76,7 @@ class Proxy extends EventEmitter {
     this.cert = options.cert;
     this.path = options.path;
     this.server = options.server;
+    this.credentials = options.credentials;
     this.on("error", () => {
       /* prevent unhandled error events from stopping the proxy */
     });
@@ -83,15 +87,46 @@ class Proxy extends EventEmitter {
     const isHTTPS = !!(this.key && this.cert);
     if (!this.server) {
       const stats = (req, res) => {
-        const url = require("url").parse(req.url);
-        if (url.pathname === "/stats") {
-          const body = JSON.stringify(this.getStats(), null, 2);
-          res.writeHead(200, {
-            "Content-Length": Buffer.byteLength(body),
-            "Content-Type": "application/json"
-          });
-          res.end(body);
+        if (this.credentials) {
+          const auth = require("basic-auth")(req);
+          if (!auth || auth.name !== this.credentials.user || auth.pass !== this.credentials.pass) {
+            res.statusCode = 401;
+            res.setHeader("WWW-Authenticate", 'Basic realm="Access to stats"');
+            res.end("Access denied");
+            return;
+          }
         }
+        const url = require("url").parse(req.url);
+        const proxyStats = this.getStats();
+        let body = JSON.stringify({
+          code: 404,
+          error: "Not Found"
+        });
+
+        if (url.pathname === "/stats") {
+          body = JSON.stringify(
+            {
+              miners: proxyStats.miners.length,
+              connections: proxyStats.connections.length
+            },
+            null,
+            2
+          );
+        }
+
+        if (url.pathname === "/miners") {
+          body = JSON.stringify(proxyStats.miners, null, 2);
+        }
+
+        if (url.pathname === "/connections") {
+          body = JSON.stringify(proxyStats.connections, null, 2);
+        }
+
+        res.writeHead(200, {
+          "Content-Length": Buffer.byteLength(body),
+          "Content-Type": "application/json"
+        });
+        res.end(body);
       };
       if (isHTTPS) {
         const certificates = {
@@ -207,13 +242,33 @@ class Proxy extends EventEmitter {
   getStats(): Stats {
     return Object.keys(this.connections).reduce(
       (stats, key) => ({
-        miners:
-          stats.miners + this.connections[key].reduce((miners, connection) => miners + connection.miners.length, 0),
-        connections: stats.connections + this.connections[key].filter(connection => !connection.donation).length
+        miners: [
+          ...stats.miners,
+          ...this.connections[key].reduce(
+            (miners, connection) => [
+              ...miners,
+              ...connection.miners.map(miner => ({
+                id: miner.id,
+                login: miner.login,
+                hashes: miner.hashes
+              }))
+            ],
+            []
+          )
+        ],
+        connections: [
+          ...stats.connections,
+          ...this.connections[key].filter(connection => !connection.donation).map(connection => ({
+            id: connection.id,
+            host: connection.host,
+            port: connection.port,
+            miners: connection.miners.length
+          }))
+        ]
       }),
       {
-        miners: 0,
-        connections: 0
+        miners: [],
+        connections: []
       }
     );
   }
