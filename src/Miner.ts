@@ -198,7 +198,10 @@ class Miner extends EventEmitter {
   }
 
   handleError(error: StratumError): void {
-    console.warn(`pool connection error (${this.id}):`, error.error);
+    console.warn(
+      `pool connection error (${this.id}):`,
+      error.error || (error && JSON.stringify(error)) || "unknown error"
+    );
     this.sendToMiner({
       type: "error",
       params: error
