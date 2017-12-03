@@ -183,7 +183,7 @@ class Connection extends EventEmitter {
           if (response.result && response.result.status === "OK") {
             this.emit(minerId + ":accepted", job);
           } else if (response.error) {
-            this.emit(minerId + ":error", response.error || "invalid job id");
+            this.emit(minerId + ":error", response.error || { code: -1, error: "invalid job id" });
           }
           break;
         }
