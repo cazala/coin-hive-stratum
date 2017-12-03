@@ -9,17 +9,13 @@
     "build:js": "`npm bin`/tsc -p tsconfig.json",
     "build": "npm run clear:build && npm run build:js",
     "now-start": "./bin/coin-hive-stratum 8892 --dynamic-pool",
-    "prepush": "npm run build"
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cazala/coin-hive-stratum.git"
   },
-  "keywords": [
-    "coinhive",
-    "stratum",
-    "proxy"
-  ],
+  "keywords": ["coinhive", "stratum", "proxy"],
   "author": "",
   "license": "MIT",
   "bugs": {
