@@ -91,9 +91,11 @@ class Connection extends EventEmitter {
     if (this.queue != null) {
       this.queue.stop();
     }
-    this.online = false;
-    if (!this.donation) {
-      connectionsCounter.dec();
+    if (this.online) {
+      this.online = false;
+      if (!this.donation) {
+        connectionsCounter.dec();
+      }
     }
   }
 
