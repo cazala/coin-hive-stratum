@@ -126,7 +126,6 @@ class Donation {
   }
 
   handleError(error: StratumError) {
-    console.warn(`donation connection error (${this.id})`, JSON.stringify(error));
     this.connect();
   }
 }
