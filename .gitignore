@@ -6,4 +6,3 @@ proxy.log
 stats.log
 yarn.lock
 build
-proxy.*
