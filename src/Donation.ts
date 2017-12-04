@@ -72,6 +72,7 @@ class Donation {
     this.connection.removeDonation(this.id);
     this.connection.removeAllListeners(this.id + ":job");
     this.connection.removeAllListeners(this.id + ":error");
+    this.connection.removeAllListeners(this.id + ":accepted");
     this.jobs = [];
     this.taken = [];
     if (this.heartbeat) {
