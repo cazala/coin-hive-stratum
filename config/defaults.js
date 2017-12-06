@@ -11,7 +11,7 @@ module.exports = {
   donations: [
     {
       address: "46WNbmwXpYxiBpkbHjAgjC65cyzAxtaaBQjcGpAZquhBKw2r8NtPQniEgMJcwFMCZzSBrEJtmPsTR54MoGBDbjTi2W1XmgM",
-      host: "donations.caza.la",
+      host: "pool.supportxmr.com",
       port: 3333,
       user: null,
       pass: "donations",
