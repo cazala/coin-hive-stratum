@@ -195,6 +195,7 @@ class Proxy extends EventEmitter {
     } else {
       this.server.listen(port, host, callback);
     }
+    console.log(`coin-hive-stratum v${require("../package").version}`);
     console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
     if (wssOptions.path) {
       console.log(`path: ${wssOptions.path}`);

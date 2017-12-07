@@ -206,11 +206,13 @@ class Miner extends EventEmitter {
       type: "error",
       params: error
     });
-    this.emit("error", {
-      id: this.id,
-      login: this.login,
-      error
-    });
+    if (this.online) {
+      this.emit("error", {
+        id: this.id,
+        login: this.login,
+        error
+      });
+    }
     this.kill();
   }
 
