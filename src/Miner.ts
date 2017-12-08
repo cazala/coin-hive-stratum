@@ -121,7 +121,7 @@ class Miner extends EventEmitter {
 
   sendToMiner(payload: CoinHiveResponse) {
     const coinhiveMessage = JSON.stringify(payload);
-    if (this.online) {
+    if (this.online && this.ws.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(coinhiveMessage);
       } catch (e) {

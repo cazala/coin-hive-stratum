@@ -63,13 +63,17 @@ class Connection extends EventEmitter {
     }
     this.socket.on("connect", this.ready.bind(this));
     this.socket.on("error", error => {
-      console.warn(`socket error (${this.host}:${this.port})`, error.message);
-      this.emit("error", error);
-      this.connect();
+      if (this.online) {
+        console.warn(`socket error (${this.host}:${this.port})`, error.message);
+        this.emit("error", error);
+        this.connect();
+      }
     });
     this.socket.on("close", () => {
-      console.log(`socket closed (${this.host}:${this.port})`);
-      this.emit("close");
+      if (this.online) {
+        console.log(`socket closed (${this.host}:${this.port})`);
+        this.emit("close");
+      }
     });
     this.socket.setKeepAlive(true);
     this.socket.setEncoding("utf8");

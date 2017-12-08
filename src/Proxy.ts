@@ -77,8 +77,9 @@ class Proxy extends EventEmitter {
     this.path = options.path;
     this.server = options.server;
     this.credentials = options.credentials;
-    this.on("error", () => {
-      /* prevent unhandled error events from stopping the proxy */
+    this.on("error", error => {
+      /* prevent unhandled proxy errors from stopping the proxy */
+      console.error("proxy error:", error.message);
     });
   }
 
