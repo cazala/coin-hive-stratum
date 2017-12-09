@@ -19,7 +19,7 @@ import {
   AuthedEvent,
   OpenEvent,
   Credentials
-} from "src/types";
+} from "./types";
 import { ServerRequest } from "http";
 
 export type Options = {

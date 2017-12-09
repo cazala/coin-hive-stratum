@@ -15,7 +15,7 @@ import {
   StratumRequestParams,
   StratumError,
   StratumJob
-} from "src/types";
+} from "./types";
 
 export type Options = {
   connection: Connection | null;
