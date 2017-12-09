@@ -149,6 +149,18 @@ Options:
 
   * `accepted`: a hash that was sent to the pool was accepted.
 
+## Healthcheck
+
+The proxy provides a few endpoints to do some healthchecks:
+
+* `/ping`: always responds with a `200`.
+
+* `/ready`: responds with a `200` if the proxy is up, bound and running. Otherwise returns a `503`.
+
+* `/version`: responds with the version of the proxy in json format, ie: `{ version: "2.x.x" }`.
+
+Example: http://localhost:8892/version
+
 ## FAQ
 
 #### Can I use this programmatically?
