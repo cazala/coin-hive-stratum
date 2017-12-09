@@ -149,9 +149,9 @@ Options:
 
   * `accepted`: a hash that was sent to the pool was accepted.
 
-## Healthcheck
+## Health Check
 
-The proxy provides a few endpoints to do some healthchecks:
+The proxy provides a few endpoints to do some health checks:
 
 * `/ping`: always responds with a `200`.
 
