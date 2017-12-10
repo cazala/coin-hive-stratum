@@ -15,6 +15,9 @@ This package was inspired by x25's
 * Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
+* Deploy this proxy to DigitalOcean ($5/mo, or free for students) and run it on your own domain.
+  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-Digital-Ocean)
+
 ## Installation
 
 ```
@@ -148,6 +151,18 @@ Options:
   * `found`: a hash meeting the pool's difficulty was found and will be sent to the pool.
 
   * `accepted`: a hash that was sent to the pool was accepted.
+
+## Health Check
+
+The proxy provides a few endpoints to do some health checks:
+
+* `/ping`: always responds with a `200`.
+
+* `/ready`: responds with a `200` if the proxy is up, bound and running. Otherwise returns a `503`.
+
+* `/version`: responds with the version of the proxy in json format, ie: `{ version: "2.x.x" }`.
+
+Example: http://localhost:8892/version
 
 ## FAQ
 

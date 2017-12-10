@@ -1,5 +1,5 @@
 import Proxy from "./Proxy";
-module.exports = Proxy;
+export = Proxy;
 
 process.on("uncaughtException", error => {
   /* prevent unhandled process errors from stopping the proxy */

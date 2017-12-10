@@ -19,7 +19,7 @@ import {
   AuthedEvent,
   OpenEvent,
   Credentials
-} from "src/types";
+} from "./types";
 import { ServerRequest } from "http";
 
 export type Options = {
@@ -58,6 +58,7 @@ class Proxy extends EventEmitter {
   path: string = null;
   server: http.Server | https.Server = null;
   credentials: Credentials = null;
+  online: boolean = false;
 
   constructor(constructorOptions: Partial<Options> = defaults) {
     super();
@@ -84,10 +85,15 @@ class Proxy extends EventEmitter {
   }
 
   listen(port: number, host?: string, callback?: () => void): void {
+    const version = require("../package").version;
+    console.log(`coin-hive-stratum v${version}`);
+    if (this.online) {
+      this.kill();
+    }
     // create server
     const isHTTPS = !!(this.key && this.cert);
     if (!this.server) {
-      const stats = (req, res) => {
+      const stats = (req: http.ServerRequest, res: http.ServerResponse) => {
         if (this.credentials) {
           const auth = require("basic-auth")(req);
           if (!auth || auth.name !== this.credentials.user || auth.pass !== this.credentials.pass) {
@@ -98,6 +104,29 @@ class Proxy extends EventEmitter {
           }
         }
         const url = require("url").parse(req.url);
+
+        if (url.pathname === "/ping") {
+          res.statusCode = 200;
+          res.end();
+          return;
+        }
+
+        if (url.pathname === "/ready") {
+          res.statusCode = this.online ? 200 : 503;
+          res.end();
+          return;
+        }
+
+        if (url.pathname === "/version") {
+          const body = JSON.stringify({ version });
+          res.writeHead(200, {
+            "Content-Length": Buffer.byteLength(body),
+            "Content-Type": "application/json"
+          });
+          res.end(body);
+          return;
+        }
+
         const proxyStats = this.getStats();
         let body = JSON.stringify({
           code: 404,
@@ -196,16 +225,18 @@ class Proxy extends EventEmitter {
     } else {
       this.server.listen(port, host, callback);
     }
-    console.log(`coin-hive-stratum v${require("../package").version}`);
-    console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
-    if (wssOptions.path) {
-      console.log(`path: ${wssOptions.path}`);
-    }
-    if (!this.dynamicPool) {
-      console.log(`host: ${this.host}`);
-      console.log(`port: ${this.port}`);
-      console.log(`pass: ${this.pass}`);
-    }
+    this.wss.on("listening", () => {
+      this.online = true;
+      console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
+      if (wssOptions.path) {
+        console.log(`path: ${wssOptions.path}`);
+      }
+      if (!this.dynamicPool) {
+        console.log(`host: ${this.host}`);
+        console.log(`port: ${this.port}`);
+        console.log(`pass: ${this.pass}`);
+      }
+    });
   }
 
   getConnection(host: string, port: number, donation: boolean = false): Connection {
@@ -284,6 +315,8 @@ class Proxy extends EventEmitter {
       });
     });
     this.wss.close();
+    this.online = false;
+    console.log(`💀`);
   }
 }
 

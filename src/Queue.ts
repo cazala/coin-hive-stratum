@@ -1,5 +1,5 @@
 import * as EventEmitter from "events";
-import { QueueMessage } from "src/types";
+import { QueueMessage } from "./types";
 
 class Queue extends EventEmitter {
   events: QueueMessage[] = [];
