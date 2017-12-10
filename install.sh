@@ -1,5 +1,5 @@
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.7/install.sh | bash
-source ~/.bash_profile
+source ~/.nvm/nvm.sh
 nvm install 8
 npm install -g pm2 coin-hive-stratum
 pm2 install pm2-logrotate
