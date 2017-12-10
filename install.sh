@@ -3,16 +3,15 @@
 # nvm install 8
 # npm install -g pm2 coin-hive-stratum
 # pm2 install pm2-logrotate
-echo <<FILE
+cat >./proxy.js <<FILE
 const Proxy = require("coin-hive-stratum");
 const proxy = new Proxy({
   host: "pool.supportxmr.com",
   port: 3333
 });
 proxy.listen(80);
-FILE > proxy.js
-
-echo <<FILE
+FILE
+cat >./proxy_secure.js <<FILE
 const Proxy = require("coin-hive-stratum");
 const domain = "yourdomain.com"
 const proxy = new Proxy({
@@ -22,4 +21,4 @@ const proxy = new Proxy({
   cert: require("fs").readFileSync("/etc/letsencrypt/live/" + domain + "/fullchain.pem"),
 });
 proxy.listen(443);
-FILE > proxy_secure.js
+FILE
