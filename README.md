@@ -17,7 +17,7 @@ This package was inspired by x25's
 * Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
-* Deploy this proxy to DigitalOcean ($5/mo, or free for students) and run it on your own domain.
+* Deploy this proxy to DigitalOcean (free promo codes!) and run it on your own domain.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-Digital-Ocean)
 
 ## Installation
