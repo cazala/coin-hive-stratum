@@ -202,10 +202,6 @@ class Miner extends EventEmitter {
       `pool connection error (${this.id}):`,
       error.error || (error && JSON.stringify(error)) || "unknown error"
     );
-    this.sendToMiner({
-      type: "error",
-      params: error
-    });
     if (this.online) {
       this.emit("error", {
         id: this.id,
