@@ -17,7 +17,7 @@ This package was inspired by x25's
 * Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
 
-* Deploy this proxy to DigitalOcean ($5/mo, or free for students) and run it on your own domain.
+* Deploy this proxy to DigitalOcean (free promo codes!) and run it on your own domain.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-Digital-Ocean)
 
 ## Installation
@@ -233,21 +233,33 @@ const Proxy = require("coin-hive-stratum");
 const proxy = new Proxy({
   host: "pool.supportxmr.com",
   port: 3333,
-  key: fs.readFileSync("./server.key"),
-  cert: fs.readFileSync("./server.crt")
+  key: require("fs").readFileSync("key.pem"),
+  cert: require("fs").readFileSync("cert.pem")
 });
 proxy.listen(8892);
 ```
 
-Now you can connect to your proxy using `wss://` and see the `/stats` though `https://`.
+Now you can connect to your proxy using `wss://` and hit the stats and health check endpoints (ie, `/stats`) though `https://`.
 
-You can generate self-signed certificates to test this by using this command:
+To generate your SSL certificates for your domain or subdomain you can use [Certbot](https://certbot.eff.org/).
 
+Certbot will generate the SSL certificates under these paths (where `example.com` is your domain):
+
+* **key**: `/etc/letsencrypt/live/example.com/privkey.pem`
+* **cert**: `/etc/letsencrypt/live/example.com/fullchain.pem`
+
+So you can use them like this:
+
+```js
+const Proxy = require("coin-hive-stratum");
+const proxy = new Proxy({
+  host: "pool.supportxmr.com",
+  port: 3333,
+  key: require("fs").readFileSync("/etc/letsencrypt/live/example.com/privkey.pem"),
+  cert: require("fs").readFileSync("/etc/letsencrypt/live/example.com/fullchain.pem")
+});
+proxy.listen(8892);
 ```
-openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt
-```
-
-You will need to add these certificates to your trusted certificates, otherwise the browser will complain.
 
 #### How can I store the logs?
 
