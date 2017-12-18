@@ -228,6 +228,7 @@ class Proxy extends EventEmitter {
     this.wss.on("listening", () => {
       this.online = true;
       console.log(`listening on port ${port}` + (isHTTPS ? ", using a secure connection" : ""));
+      console.log(`miners per connection:`, this.maxMinersPerConnection);
       if (wssOptions.path) {
         console.log(`path: ${wssOptions.path}`);
       }
