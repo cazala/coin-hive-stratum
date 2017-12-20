@@ -11,14 +11,17 @@ This package was inspired by x25's
 
 ## Guides
 
+* Deploy this proxy to DigitalOcean (free promo codes!) and run it on your own domain.
+  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-DigitalOcean)
+
+* Deploy this proxy for free to Heroku + GitHub Pages and avoid AdBlock.
+  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-Heroku-and-GitHub-Pages)
+
 * Deploy this proxy for free to `now.sh` + GitHub Pages and avoid AdBlock.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages)
 
-* Run proxy with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
+* Run this proxy on your own server with `pm2` and get load balancing, cluster mode, watch & reload, and live metrics.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Run-with-PM2)
-
-* Deploy this proxy to DigitalOcean (free promo codes!) and run it on your own domain.
-  [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-Digital-Ocean)
 
 ## Installation
 
