@@ -2,4 +2,4 @@ const Proxy = require("./build");
 const proxy = new Proxy({
   dynamicPool: true
 });
-proxy.listen(8892);
+proxy.listen(process.env.PORT || 8892);
