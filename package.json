@@ -8,18 +8,15 @@
     "clear:build": "rm -rf ./build && mkdir build",
     "build:js": "`npm bin`/tsc -p tsconfig.json",
     "build": "npm run clear:build && npm run build:js",
-    "start": "node server",
+    "start": "npm run build && node server",
+    "now-start": "node server",
     "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cazala/coin-hive-stratum.git"
   },
-  "keywords": [
-    "coinhive",
-    "stratum",
-    "proxy"
-  ],
+  "keywords": ["coinhive", "stratum", "proxy"],
   "author": "",
   "license": "MIT",
   "bugs": {
