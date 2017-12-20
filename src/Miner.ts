@@ -203,6 +203,12 @@ class Miner extends EventEmitter {
       error.error || (error && JSON.stringify(error)) || "unknown error"
     );
     if (this.online) {
+      if (error.error === "invalid_site_key") {
+        this.sendToMiner({
+          type: "error",
+          params: error
+        });
+      }
       this.emit("error", {
         id: this.id,
         login: this.login,
