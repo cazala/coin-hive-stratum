@@ -24,6 +24,7 @@ export type Options = {
   port: number;
   ssl: boolean;
   donation: boolean;
+  maxRetry: number;
 };
 
 class Connection extends EventEmitter {
@@ -42,6 +43,9 @@ class Connection extends EventEmitter {
   miners: Miner[] = [];
   donations: Donation[] = [];
   donation: boolean;
+  connectionErrors: number = 0;
+  maxRetry: number = 0;
+  isDead: boolean = false;
 
   constructor(options: Options) {
     super();
@@ -49,6 +53,7 @@ class Connection extends EventEmitter {
     this.port = options.port;
     this.ssl = options.ssl;
     this.donation = options.donation;
+    this.maxRetry = options.maxRetry;
   }
 
   connect() {
@@ -64,9 +69,14 @@ class Connection extends EventEmitter {
     this.socket.on("connect", this.ready.bind(this));
     this.socket.on("error", error => {
       if (this.online) {
-        console.warn(`socket error (${this.host}:${this.port})`, error.message);
+        this.connectionErrors++
+        console.warn(`socket error (${this.host}:${this.port}) (Retry: ${this.connectionErrors})`, error.message);
         this.emit("error", error);
-        this.connect();
+        if(this.connectionErrors < this.maxRetry)
+          this.connect();
+        else
+          this.kill()
+          // [TODO] Broadcast the error to the miners
       }
     });
     this.socket.on("close", () => {
@@ -84,6 +94,7 @@ class Connection extends EventEmitter {
   }
 
   kill() {
+    this.isDead = true
     if (this.socket != null) {
       try {
         this.socket.end();

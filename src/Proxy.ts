@@ -38,6 +38,7 @@ export type Options = {
   path: string;
   server: http.Server | https.Server;
   credentials: Credentials;
+  maxRetry: number;
 };
 
 class Proxy extends EventEmitter {
@@ -59,6 +60,7 @@ class Proxy extends EventEmitter {
   server: http.Server | https.Server = null;
   credentials: Credentials = null;
   online: boolean = false;
+  maxRetry: number;
 
   constructor(constructorOptions: Partial<Options> = defaults) {
     super();
@@ -78,6 +80,7 @@ class Proxy extends EventEmitter {
     this.path = options.path;
     this.server = options.server;
     this.credentials = options.credentials;
+    this.maxRetry = options.maxRetry
     this.on("error", error => {
       /* prevent unhandled proxy errors from stopping the proxy */
       console.error("proxy error:", error.message);
@@ -248,7 +251,7 @@ class Proxy extends EventEmitter {
     const connections = this.connections[connectionId];
     const availableConnections = connections.filter(connection => this.isAvailable(connection));
     if (availableConnections.length === 0) {
-      const connection = new Connection({ host, port, ssl: this.ssl, donation });
+      const connection = new Connection({ host, port, ssl: this.ssl, donation, maxRetry: this.maxRetry });
       connection.connect();
       connection.on("close", () => {
         console.log(`connection closed (${connectionId})`);
@@ -265,7 +268,8 @@ class Proxy extends EventEmitter {
   isAvailable(connection: Connection): boolean {
     return (
       connection.miners.length < this.maxMinersPerConnection &&
-      connection.donations.length < this.maxMinersPerConnection
+      connection.donations.length < this.maxMinersPerConnection &&
+      !connection.isDead
     );
   }
 
