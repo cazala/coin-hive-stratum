@@ -120,8 +120,9 @@ class Proxy extends EventEmitter {
         if (url.pathname === "/version") {
           const body = JSON.stringify({ version });
           res.writeHead(200, {
+            "Access-Control-Allow-Origin": "*",
             "Content-Length": Buffer.byteLength(body),
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           });
           res.end(body);
           return;
@@ -153,6 +154,7 @@ class Proxy extends EventEmitter {
         }
 
         res.writeHead(200, {
+          "Access-Control-Allow-Origin": "*",
           "Content-Length": Buffer.byteLength(body),
           "Content-Type": "application/json"
         });
