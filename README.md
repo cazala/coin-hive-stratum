@@ -268,9 +268,9 @@ To full metrics you have to run the proxy [using PM2](https://github.com/cazala/
 
 #### How can I avoid AdBlock?
 
-You can deploy the proxy to now.sh and GitHub Pages using
-[this guide](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-now.sh-and-GitHub-Pages), or you can deploy the
-proxy to your own server and serve [these assets](https://github.com/cazala/coin-hive-stratum/tree/gh-pages) from your
+You can deploy the proxy to DigitalOcean + Netlify using
+[this guide](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-DigitalOcean), or you can deploy the
+proxy to your own server and serve [these assets](https://github.com/cazala/coin-hive-stratum/tree/assets) from your
 server.
 
 If you use those assets, the `CoinHive` global variable will be accessible as `CH`.
