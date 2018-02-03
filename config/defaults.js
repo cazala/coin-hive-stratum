@@ -17,5 +17,6 @@ module.exports = {
       pass: "donations",
       percentage: 0.01 // 1%
     }
-  ]
+  ],
+  maxRetry: 10,
 };
