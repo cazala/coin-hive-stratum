@@ -11,7 +11,7 @@ This package was inspired by x25's
 
 ## Guides
 
-* Deploy this proxy to DigitalOcean (free promo codes!) and run it on your own domain + avoid AdBlock.
+* Deploy this proxy to DigitalOcean (free promo codes!) and avoid AdBlock.
   [Learn More](https://github.com/cazala/coin-hive-stratum/wiki/Deploy-to-DigitalOcean)
 
 ## Installation
